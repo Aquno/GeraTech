@@ -179,6 +179,20 @@ describe('Orders API contra PostgreSQL real', () => {
     expect(response.json()).toEqual({ statusCode: 404, error: 'Not Found', message: 'Order not found' });
   });
 
+  it('expõe request id e métricas com o template da rota na aplicação real', async () => {
+    const created = await createOrder({ customerName: 'Maria', items: [{ productId: 'suco', quantity: 1 }] });
+    const order = created.json<OrderBody>();
+    await app.inject({ method: 'GET', url: `/orders/${order.id}` });
+
+    const metrics = await app.inject({ method: 'GET', url: '/metrics' });
+
+    expect(created.headers['x-request-id']).toMatch(UUID);
+    expect(metrics.statusCode).toBe(200);
+    expect(metrics.body).toMatch(/http_request_duration_seconds_count\{method="POST",route="\/orders",status_code="201"\} \d+/);
+    expect(metrics.body).toMatch(/http_request_duration_seconds_count\{method="GET",route="\/orders\/:id",status_code="200"\} \d+/);
+    expect(metrics.body).not.toContain(order.id);
+  });
+
   it('GET /health responde 200 com o banco no ar', async () => {
     const response = await app.inject({ method: 'GET', url: '/health' });
 

@@ -1,26 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CancelOrder } from '../../../src/application/cancel-order';
-import { CreateOrder } from '../../../src/application/create-order';
-import { GetOrder } from '../../../src/application/get-order';
-import { ListOrders } from '../../../src/application/list-orders';
 import { buildApp, type AppDependencies } from '../../../src/http/app';
-import { InMemoryOrderRepository, InMemoryProductRepository, SUCO, X_BURGER } from '../support/fakes';
-
-const ORDER_ID = '11111111-1111-4111-8111-111111111111';
-const MISSING_ID = '00000000-0000-4000-8000-000000000000';
-
-function dependencies(overrides: Partial<AppDependencies> = {}): AppDependencies {
-  const orders = new InMemoryOrderRepository();
-  return {
-    createOrder: new CreateOrder(orders, new InMemoryProductRepository([X_BURGER, SUCO]), () => ORDER_ID),
-    getOrder: new GetOrder(orders),
-    listOrders: new ListOrders(orders),
-    cancelOrder: new CancelOrder(orders),
-    checkDatabase: () => Promise.resolve(),
-    ...overrides,
-  };
-}
+import { MISSING_ID, ORDER_ID, inMemoryDependencies as dependencies } from '../support/app';
 
 function postOrder(app: FastifyInstance, payload: unknown) {
   return app.inject({ method: 'POST', url: '/orders', payload: payload as Record<string, unknown> });
@@ -154,7 +135,7 @@ describe('HTTP: validação e mapeamento de erros', () => {
 
 describe('HTTP: erros inesperados e health', () => {
   it('500 genérico sem expor a mensagem interna', async () => {
-    const failingList = { execute: () => Promise.reject(new Error('connection refused at 10.0.0.5')) } as unknown as ListOrders;
+    const failingList = { execute: () => Promise.reject(new Error('connection refused at 10.0.0.5')) } as unknown as AppDependencies['listOrders'];
     const app = buildApp(dependencies({ listOrders: failingList }), { logLevel: false });
 
     const response = await app.inject({ method: 'GET', url: '/orders' });

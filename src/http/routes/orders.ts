@@ -20,6 +20,11 @@ interface OrderParams {
 export function registerOrderRoutes(app: FastifyInstance, useCases: OrderUseCases): void {
   app.post<{ Body: CreateOrderInput }>('/orders', { schema: createOrderSchema }, async (request, reply) => {
     const order = await useCases.createOrder.execute(request.body);
+    // Sem customerName nem corpo: só identificadores e números.
+    request.log.info(
+      { event: 'order.created', orderId: order.id, itemCount: order.items.length, totalCents: order.totalCents },
+      'order created',
+    );
     return reply.code(201).header('location', `/orders/${order.id}`).send(toOrderResponse(order));
   });
 
@@ -35,6 +40,7 @@ export function registerOrderRoutes(app: FastifyInstance, useCases: OrderUseCase
 
   app.post<{ Params: OrderParams }>('/orders/:id/cancel', { schema: cancelOrderSchema }, async (request) => {
     const order = await useCases.cancelOrder.execute(request.params.id);
+    request.log.info({ event: 'order.cancelled', orderId: order.id }, 'order cancelled');
     return toOrderResponse(order);
   });
 }
