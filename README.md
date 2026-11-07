@@ -10,6 +10,8 @@ API de pedidos de uma lanchonete com cardápio fixo. Cria, consulta, lista e can
 
 **Stack:** Node 26 (LTS) · TypeScript (strict) · Fastify 5 · PostgreSQL 16 · Knex · Vitest · pino + prom-client · k6 · Docker Compose · GitHub Actions.
 
+**Interface web** ([`web/`](web/)): React 19 · Vite · TypeScript (strict) · Vitest + Testing Library, servida por nginx sem root.
+
 ## Como subir
 
 Pré-requisito: **Docker** com Docker Compose.
@@ -18,7 +20,15 @@ Pré-requisito: **Docker** com Docker Compose.
 docker compose up --build
 ```
 
-Esse comando sobe o PostgreSQL e a API, roda as migrations e o seed do cardápio, e deixa a API em `http://localhost:3000`. A API só inicia depois que o banco passa no healthcheck.
+Esse comando sobe o PostgreSQL, a API (que roda as migrations e o seed do cardápio) e a interface web. Cada serviço só inicia depois que o anterior passa no healthcheck.
+
+| Serviço | Endereço |
+|---|---|
+| **Interface web (cardápio)** | **http://localhost:8080** |
+| API | http://localhost:3000 |
+| PostgreSQL | `localhost:5432` |
+
+A interface chama a API pelo próprio nginx, em `/api/` (ex.: `http://localhost:8080/api/products`). O navegador fala sempre com a mesma origem, sem CORS. Para usar outra porta na interface, defina `WEB_PORT`.
 
 **Não é preciso criar `.env`.** O `docker-compose.yml` já traz valores padrão de desenvolvimento (fictícios) no formato `${VAR:-padrão}`. Para mudar algum valor, crie um `.env` local a partir do `.env.example`. O `.env` é ignorado pelo git.
 
@@ -26,7 +36,14 @@ Esse comando sobe o PostgreSQL e a API, roda as migrations e o seed do cardápio
 
 ## Como testar o fluxo
 
-A documentação interativa (Swagger UI) fica em **http://localhost:3000/docs**.
+**Pela interface:** abra http://localhost:8080, adicione itens do cardápio, informe o nome e confirme. A tela de confirmação mostra o pedido como a API devolveu (total oficial e status) e permite cancelar. O total do carrinho é só uma prévia.
+
+| Celular | Desktop |
+|---|---|
+| ![Cardápio no celular](docs/evidencias/web/mobile-claro.png) | ![Cardápio no desktop com itens no carrinho](docs/evidencias/web/desktop-claro-com-itens.png) |
+| ![Carrinho aberto no celular, tema escuro](docs/evidencias/web/mobile-escuro-carrinho-aberto.png) | ![Confirmação do pedido no desktop](docs/evidencias/web/desktop-confirmacao.png) |
+
+**Pela API:** a documentação interativa (Swagger UI) fica em **http://localhost:3000/docs**.
 
 **Cardápio** (fixo, populado por seed):
 
@@ -85,9 +102,12 @@ Todos os erros usam o formato `{ statusCode, error, message, details? }`.
 | `GET` | `/orders` | Lista todos os pedidos, do mais recente ao mais antigo (sem paginação, ver riscos) |
 | `GET` | `/orders/:id` | Consulta um pedido (200; 400 id inválido; 404) |
 | `POST` | `/orders/:id/cancel` | Cancela um pedido `PENDING` (200; 404; 409 se já cancelado) |
+| `GET` | `/products` | Cardápio: id, nome, descrição, categoria e preço, ordenado por categoria e nome |
 | `GET` | `/health` | Saúde da API e do banco (`200` ok, `503` banco fora) |
 | `GET` | `/metrics` | Métricas no formato Prometheus (histograma de latência e métricas do processo) |
 | `GET` | `/docs` | Swagger UI gerado a partir do [`docs/openapi.yaml`](docs/openapi.yaml) |
+
+As rotas acima são da API (porta 3000). Pela interface web (porta 8080), as mesmas rotas ficam em `/api/...`.
 
 Toda resposta traz o header `x-request-id`. A API aceita o valor enviado pelo cliente quando ele é seguro; caso contrário, gera um. O mesmo id aparece em todos os logs da requisição. Os logs são JSON, um por requisição, sem dados pessoais.
 
@@ -114,7 +134,16 @@ Para rodar fora do Docker, use o Node 26 (`.nvmrc`) e instale as dependências c
 | Funções | 95% |
 | Branches | 85% |
 
-O CI roda lint, typecheck, lint do OpenAPI (Redocly), testes com coverage num PostgreSQL de service container, varredura de segredos e um `docker compose up` do zero com verificação do `/health`.
+**Interface web** (dentro de `web/`, sem precisar de banco nem da API, que é simulada nos testes):
+
+| Comando | O que roda |
+|---|---|
+| `npm run lint` / `npm run typecheck` | ESLint (com regras de hooks do React) e checagem de tipos |
+| `npm test` | Testes da lógica do carrinho, moeda, erros e do fluxo completo com Testing Library |
+| `npm run test:coverage` | Testes com coverage; falha abaixo do threshold do [`web/vite.config.ts`](web/vite.config.ts): linhas, statements e funções 95%, branches 90% |
+| `npm run dev` | Vite em http://localhost:5173, repassando `/api` para a API local |
+
+O CI roda lint, typecheck, lint do OpenAPI (Redocly), testes com coverage num PostgreSQL de service container, o job do frontend (lint, typecheck, testes e build), varredura de segredos e um `docker compose up` do zero. Esse último verifica o `/health`, a página web e `/api/products` passando pelo nginx.
 
 ## Teste de carga (k6) e SLO
 
@@ -139,6 +168,7 @@ Referência: [`.env.example`](.env.example).
 | `DATABASE_URL` | sim | (no compose: aponta para o serviço `db`) | URL `postgresql://` do banco |
 | `PORT` | não | `3000` | Porta HTTP |
 | `LOG_LEVEL` | não | `info` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` ou `silent` |
+| `WEB_PORT` | não | `8080` | Porta da interface web no host (só no compose) |
 
 As variáveis são validadas na inicialização. Se faltar algo obrigatório ou houver valor inválido, a aplicação não sobe e lista os problemas.
 
@@ -153,6 +183,7 @@ As variáveis são validadas na inicialização. Se faltar algo obrigatório ou 
 
 ```bash
 docker build --secret id=npm_ca,src=/caminho/do/certificado.pem -t orders-api-api .
+docker build --secret id=npm_ca,src=/caminho/do/certificado.pem -t orders-api-web ./web
 docker compose up -d --wait
 ```
 
@@ -167,3 +198,4 @@ Sem o secret, o build funciona normalmente em qualquer ambiente sem interceptaç
 | [docs/openapi.yaml](docs/openapi.yaml) | Contrato OpenAPI 3.1 (também em `/docs`) |
 | [docs/desempenho.md](docs/desempenho.md) | SLO, plano de p95, medições e riscos |
 | [CONTRIBUTORS.md](CONTRIBUTORS.md) | Registro do processo e das decisões |
+| [docs/evidencias/](docs/evidencias/) | Resumos JSON do k6 e capturas de tela da interface |

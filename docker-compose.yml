@@ -40,6 +40,23 @@ services:
       retries: 5
       start_period: 15s
 
+  # Interface web (React + nginx). Só sobe com a API saudável; /api/ é repassado para a API.
+  web:
+    build: ./web
+    environment:
+      API_UPSTREAM: api:${PORT:-3000}
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
   # Teste de carga. Só sobe com o profile "load": docker compose --profile load run --rm k6
   k6:
     image: grafana/k6:2.3.0
