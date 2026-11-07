@@ -1,4 +1,5 @@
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { LogController, type FastifyInstance } from 'fastify';
+import { registerApiDocs } from './api-docs';
 import { errorHandler } from './error-handler';
 import { LOG_REDACT_PATHS, registerObservability } from './observability';
 import { createHttpMetrics, type HttpMetrics } from './observability/metrics';
@@ -17,10 +18,12 @@ export interface AppOptions {
   logStream?: { write(line: string): void };
   /** Registry de métricas; por padrão cada app cria o seu, com as métricas padrão do processo. */
   metrics?: HttpMetrics;
+  /** Caminho do contrato OpenAPI servido em /docs; padrão: docs/openapi.yaml. */
+  openapiPath?: string;
 }
 
 export function buildApp(deps: AppDependencies, options: AppOptions = {}): FastifyInstance {
-  const { logLevel = 'info', logStream, metrics = createHttpMetrics() } = options;
+  const { logLevel = 'info', logStream, metrics = createHttpMetrics(), openapiPath } = options;
   const app = Fastify({
     logger:
       logLevel === false
@@ -32,7 +35,7 @@ export function buildApp(deps: AppDependencies, options: AppOptions = {}): Fasti
           },
     genReqId: resolveRequestId,
     // O log padrão do Fastify gera duas linhas por requisição; registerObservability emite uma só.
-    disableRequestLogging: true,
+    logController: new LogController({ disableRequestLogging: true }),
     ajv: {
       customOptions: {
         // Rejeita campos fora do contrato (ex.: unitPrice) em vez de removê-los silenciosamente.
@@ -45,6 +48,7 @@ export function buildApp(deps: AppDependencies, options: AppOptions = {}): Fasti
 
   app.setErrorHandler(errorHandler);
   registerObservability(app, metrics);
+  registerApiDocs(app, openapiPath);
   registerOrderRoutes(app, deps);
   registerHealthRoute(app, deps.checkDatabase);
 
