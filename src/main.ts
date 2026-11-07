@@ -1,33 +1,12 @@
 import 'dotenv/config';
-import { CancelOrder } from './application/cancel-order';
-import { CreateOrder } from './application/create-order';
-import { GetOrder } from './application/get-order';
-import { ListOrders } from './application/list-orders';
+import { createApplication } from './composition';
 import { loadConfigOrExit } from './config';
-import { buildApp } from './http/app';
 import { createDatabase } from './infra/db/database';
-import { KnexOrderRepository } from './infra/repositories/knex-order-repository';
-import { KnexProductRepository } from './infra/repositories/knex-product-repository';
 
 async function main(): Promise<void> {
   const config = loadConfigOrExit();
   const db = createDatabase(config.databaseUrl);
-
-  const orders = new KnexOrderRepository(db);
-  const products = new KnexProductRepository(db);
-
-  const app = buildApp(
-    {
-      createOrder: new CreateOrder(orders, products),
-      getOrder: new GetOrder(orders),
-      listOrders: new ListOrders(orders),
-      cancelOrder: new CancelOrder(orders),
-      checkDatabase: async () => {
-        await db.raw('select 1');
-      },
-    },
-    { logLevel: config.logLevel },
-  );
+  const app = createApplication(db, { logLevel: config.logLevel });
 
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
     app.log.info({ signal }, 'shutting down');
