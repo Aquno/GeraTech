@@ -99,3 +99,19 @@ export const cancelOrderSchema = {
   params: orderIdParams,
   response: { 200: order, 400: error, 404: error, 409: error },
 } as const;
+
+const product = {
+  type: 'object',
+  required: ['id', 'name', 'description', 'category', 'priceCents'],
+  properties: {
+    id: { type: 'string' },
+    name: { type: 'string' },
+    description: { type: 'string' },
+    category: { type: 'string', enum: ['lanches', 'acompanhamentos', 'bebidas'] },
+    priceCents: { type: 'integer' },
+  },
+} as const;
+
+export const listProductsSchema = {
+  response: { 200: { type: 'array', items: product } },
+} as const;

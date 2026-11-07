@@ -4,6 +4,7 @@ import { CancelOrder } from './application/cancel-order';
 import { CreateOrder } from './application/create-order';
 import { GetOrder } from './application/get-order';
 import { ListOrders } from './application/list-orders';
+import { ListProducts } from './application/list-products';
 import { buildApp, type AppOptions } from './http/app';
 import { KnexOrderRepository } from './infra/repositories/knex-order-repository';
 import { KnexProductRepository } from './infra/repositories/knex-product-repository';
@@ -19,6 +20,7 @@ export function createApplication(db: Knex, options: AppOptions = {}): FastifyIn
       getOrder: new GetOrder(orders),
       listOrders: new ListOrders(orders),
       cancelOrder: new CancelOrder(orders),
+      listProducts: new ListProducts(products),
       checkDatabase: async () => {
         await db.raw('select 1');
       },

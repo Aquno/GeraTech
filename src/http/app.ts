@@ -6,9 +6,12 @@ import { createHttpMetrics, type HttpMetrics } from './observability/metrics';
 import { resolveRequestId } from './observability/request-id';
 import { registerHealthRoute, type DatabaseCheck } from './routes/health';
 import { registerOrderRoutes, type OrderUseCases } from './routes/orders';
+import { registerProductRoutes } from './routes/products';
+import type { ListProducts } from '../application/list-products';
 
 export interface AppDependencies extends OrderUseCases {
   checkDatabase: DatabaseCheck;
+  listProducts: ListProducts;
 }
 
 export interface AppOptions {
@@ -51,6 +54,7 @@ export function buildApp(deps: AppDependencies, options: AppOptions = {}): Fasti
   registerApiDocs(app, openapiPath);
   registerOrderRoutes(app, deps);
   registerHealthRoute(app, deps.checkDatabase);
+  registerProductRoutes(app, deps.listProducts);
 
   return app;
 }

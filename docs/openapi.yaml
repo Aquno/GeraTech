@@ -1,13 +1,14 @@
 openapi: 3.1.0
 info:
   title: Orders API
-  version: 0.2.0
+  version: 0.3.0
   description: |
-    API de pedidos sobre um cardápio fixo. Escopo restrito a criar, consultar, listar e cancelar pedidos.
+    API de pedidos sobre um cardápio fixo. Escopo restrito a criar, consultar, listar e cancelar pedidos,
+    e a listar o cardápio.
 
     - Todos os valores monetários são inteiros em centavos.
     - O preço de cada item sempre vem do cardápio; o cliente informa apenas `productId` e `quantity`.
-    - O cardápio é populado por seed e não possui endpoints.
+    - O cardápio é populado por seed e é somente leitura: `GET /products` o lista; não há endpoints de escrita.
   license:
     name: MIT
     identifier: MIT
@@ -103,6 +104,24 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/AlreadyCancelled'
+
+  /products:
+    get:
+      operationId: listProducts
+      summary: Lista o cardápio
+      description: |
+        Retorna todos os produtos do cardápio, ordenados por categoria, na ordem
+        `lanches`, `acompanhamentos`, `bebidas`, e, dentro de cada categoria, por nome.
+        O cardápio é fixo (populado por seed) e os preços são inteiros em centavos.
+      responses:
+        '200':
+          description: Cardápio
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
 
 components:
   parameters:
@@ -209,6 +228,32 @@ components:
           type: string
           format: date-time
           readOnly: true
+
+    ProductCategory:
+      type: string
+      description: Categoria do produto no cardápio.
+      enum: [lanches, acompanhamentos, bebidas]
+
+    Product:
+      type: object
+      required: [id, name, description, category, priceCents]
+      properties:
+        id:
+          $ref: '#/components/schemas/ProductId'
+        name:
+          type: string
+          examples: ['X-Burger']
+        description:
+          type: string
+          maxLength: 200
+          examples: ['Hambúrguer bovino suculento com queijo derretido no pão brioche tostado.']
+        category:
+          $ref: '#/components/schemas/ProductCategory'
+        priceCents:
+          type: integer
+          minimum: 1
+          description: Preço unitário em centavos.
+          examples: [1800]
 
     Error:
       type: object
