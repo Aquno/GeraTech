@@ -1,6 +1,6 @@
 # Orders API
 
-API de pedidos em Node 20 + TypeScript + Fastify + PostgreSQL, com um domínio só e nível simples, sobre um cardápio fixo.
+API de pedidos em Node 26 (LTS; versão no `.nvmrc`) + TypeScript + Fastify + PostgreSQL, com um domínio só e nível simples, sobre um cardápio fixo.
 
 ## Regras permanentes
 
