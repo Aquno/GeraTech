@@ -128,13 +128,13 @@ Com 5 VUs e cerca de 10 req/s, este resultado mostra que o fluxo funciona e que 
 
 ## Repetibilidade: 3 execuções seguidas
 
-Mesmo cenário, mesmo comando (`docker compose --profile load run --rm k6`), mesma máquina e mesmo ambiente descritos acima. As 3 execuções rodaram em sequência em 07/11/2026, das 16:50 às 16:54, com a imagem da API já incluindo o Swagger UI em `/docs` (mudança sem efeito nas rotas medidas). Fonte: um JSON por execução em `tests/load/results/`.
+Mesmo cenário, mesmo comando (`docker compose --profile load run --rm k6`), mesma máquina e mesmo ambiente descritos acima. As 3 execuções rodaram em sequência em 07/11/2026, das 16:50 às 16:54, com a imagem da API já incluindo o Swagger UI em `/docs` (mudança sem efeito nas rotas medidas). Fonte: o resumo JSON de cada execução, versionado como evidência em [`docs/evidencias/k6/`](evidencias/k6/) (link na primeira coluna).
 
 | Execução | Horário (UTC−3) | Pedidos no banco antes | p95 `POST /orders` | p50 | p99 | máximo | p95 `GET /orders/:id` | Falhas | Checks |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 16:50:36 – 16:51:39 | 1479 | **35,59 ms** | 23,09 | 80,15 | 82,88 | 11,21 | 0 / 590 | 1180 / 1180 |
-| 2 | 16:51:40 – 16:52:43 | 1774 | **33,24 ms** | 19,61 | 37,89 | 47,27 | 10,54 | 0 / 590 | 1180 / 1180 |
-| 3 | 16:52:44 – 16:53:47 | 2069 | **31,29 ms** | 20,27 | 37,27 | 39,15 | 11,05 | 0 / 590 | 1180 / 1180 |
+| [1](evidencias/k6/smoke-summary-2026-11-07T19-51-39-030Z.json) | 16:50:36 – 16:51:39 | 1479 | **35,59 ms** | 23,09 | 80,15 | 82,88 | 11,21 | 0 / 590 | 1180 / 1180 |
+| [2](evidencias/k6/smoke-summary-2026-11-07T19-52-42-509Z.json) | 16:51:40 – 16:52:43 | 1774 | **33,24 ms** | 19,61 | 37,89 | 47,27 | 10,54 | 0 / 590 | 1180 / 1180 |
+| [3](evidencias/k6/smoke-summary-2026-11-07T19-53-46-508Z.json) | 16:52:44 – 16:53:47 | 2069 | **31,29 ms** | 20,27 | 37,27 | 39,15 | 11,05 | 0 / 590 | 1180 / 1180 |
 
 | Resumo do p95 de `POST /orders` | Valor |
 |---|---|

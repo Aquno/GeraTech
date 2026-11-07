@@ -15,7 +15,7 @@ concurrency:
 jobs:
   quality:
     name: Qualidade (lint, typecheck, OpenAPI)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -43,7 +43,7 @@ jobs:
 
   tests:
     name: Testes (unit + integração) com coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       postgres:
@@ -91,7 +91,7 @@ jobs:
 
   secrets:
     name: Varredura de segredos (gitleaks)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       GITLEAKS_VERSION: 8.30.1
@@ -117,7 +117,7 @@ jobs:
 
   compose:
     name: Docker Compose sobe do zero (healthcheck)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
