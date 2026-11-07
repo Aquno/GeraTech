@@ -7,6 +7,7 @@ import { ErrorAlert } from './components/ErrorAlert';
 import { Logo } from './components/Logo';
 import { Menu } from './components/Menu';
 import { OrderConfirmation } from './components/OrderConfirmation';
+import { ProductPhoto } from './components/ProductPhoto';
 import { describeError, type UserMessage } from './lib/errors';
 import { applyTheme, initialTheme, saveTheme, type Theme } from './lib/theme';
 
@@ -101,25 +102,24 @@ export function App() {
         Pular para o conteúdo
       </a>
       <header className="site-header">
-        <div className="brand">
-          <Logo />
-          <div>
+        <div className="site-header-inner">
+          <div className="brand">
+            <Logo />
             <h1 className="brand-name">Mostarda Lanches</h1>
-            <p className="brand-tagline">Feito na hora, do jeito que você gosta.</p>
           </div>
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={() => {
+              const next = theme === 'dark' ? 'light' : 'dark';
+              setTheme(next);
+              saveTheme(next);
+            }}
+            aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="theme-toggle"
-          onClick={() => {
-            const next = theme === 'dark' ? 'light' : 'dark';
-            setTheme(next);
-            saveTheme(next);
-          }}
-          aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-        >
-          <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
-        </button>
       </header>
 
       <p className="visually-hidden" aria-live="polite">
@@ -137,17 +137,61 @@ export function App() {
           />
         ) : (
           <>
-            {menu.status === 'loading' && (
-              <p className="loading" role="status">
-                Carregando o cardápio…
-              </p>
-            )}
-            {menu.status === 'error' && (
-              <ErrorAlert message={menu.message} action={{ label: 'Tentar de novo', onClick: retryMenu }} />
-            )}
-            {menu.status === 'ready' && (
-              <Menu products={menu.products} quantityOf={(id) => quantityOf(cart, id)} onAdd={handleAdd} />
-            )}
+            <div className="menu-column">
+              <section className="hero" aria-labelledby="hero-title">
+                <div className="hero-text">
+                  <p className="hero-eyebrow">Lanchonete de bairro, feita na hora</p>
+                  <h2 id="hero-title" className="hero-title">
+                    Seu lanche do jeito que você gosta
+                  </h2>
+                  <p className="hero-lead">
+                    Escolha no cardápio, ajuste as quantidades e confirme. O valor final é calculado pela lanchonete na hora do
+                    pedido.
+                  </p>
+                  <a href="#menu-title" className="button button-primary hero-cta">
+                    Ver cardápio
+                  </a>
+                </div>
+                {/* Composição decorativa (lanche, batata e suco): só aparece a partir de 560px. */}
+                <div className="hero-media">
+                  <ProductPhoto
+                    productId="x-salada"
+                    category="lanches"
+                    className="hero-photo hero-photo-main"
+                    sizes="(min-width: 960px) 340px, 60vw"
+                    decorative
+                    eager
+                  />
+                  <ProductPhoto
+                    productId="batata-frita"
+                    category="acompanhamentos"
+                    className="hero-photo hero-photo-side"
+                    sizes="180px"
+                    decorative
+                    eager
+                  />
+                  <ProductPhoto
+                    productId="suco"
+                    category="bebidas"
+                    className="hero-photo hero-photo-corner"
+                    sizes="160px"
+                    decorative
+                    eager
+                  />
+                </div>
+              </section>
+              {menu.status === 'loading' && (
+                <p className="loading" role="status">
+                  Carregando o cardápio…
+                </p>
+              )}
+              {menu.status === 'error' && (
+                <ErrorAlert message={menu.message} action={{ label: 'Tentar de novo', onClick: retryMenu }} />
+              )}
+              {menu.status === 'ready' && (
+                <Menu products={menu.products} quantityOf={(id) => quantityOf(cart, id)} onAdd={handleAdd} />
+              )}
+            </div>
             <CartPanel
               cart={cart}
               dispatch={dispatch}
@@ -160,6 +204,7 @@ export function App() {
       </main>
       <footer className="site-footer">
         <p>Mostarda Lanches é uma lanchonete fictícia de demonstração.</p>
+        <p>Fotos de bancos de imagens com licença CC0 (créditos em web/src/assets/products/CREDITS.md).</p>
       </footer>
     </>
   );

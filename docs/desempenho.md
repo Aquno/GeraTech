@@ -151,6 +151,35 @@ As 3 execuções cumpriram o SLO e aprovaram todos os thresholds, com código de
 - **O volume do banco não pesou.** De 1479 para 2069 pedidos, o p95 não piorou (caiu levemente). Era o esperado: `POST /orders` e `GET /orders/:id` usam chave primária e índice, sem varrer a tabela. Isso **não** vale para `GET /orders` (risco 1).
 - **3 execuções descartadas.** Entre 16:45 e 16:49 rodamos 3 execuções antes desta série. Elas rodaram normalmente, mas o resumo JSON não pôde ser gravado: o arquivo antigo pertencia a outro usuário do container (ver risco 9), e o k6 saiu com código 0 mesmo assim. Como não havia JSON para conferir, essas execuções ficaram fora da tabela, e o problema foi corrigido antes desta série.
 
+## Após a evolução (interface web)
+
+Depois da evolução, a interface web (`web/`, nginx + React) e o endpoint `GET /products` (com a migration 003) já estavam no ar. Repetimos a mesma série: mesmo cenário, mesmo comando (`docker compose --profile load run --rm k6`), mesma máquina e mesmo ambiente. As 3 execuções rodaram em sequência em 07/11/2026, das 18:24 às 18:27, com as imagens geradas a partir do commit `615d688` (merge do PR #3).
+
+> **Escopo da medição:** o SLO cobre só a **API**. O k6 chama a API diretamente (`http://api:3000`, na rede do compose), sem passar pelo nginx nem pelo navegador. A interface web **não faz parte** da medição: a renderização no navegador, o download dos arquivos estáticos e o proxy `/api/` do nginx não entram nesses números.
+
+| Execução | Horário (UTC−3) | Pedidos no banco antes | p95 `POST /orders` | p50 | p99 | máximo | p95 `GET /orders/:id` | Falhas | Checks |
+|---|---|---|---|---|---|---|---|---|---|
+| [1](evidencias/k6/smoke-summary-2026-11-07T21-25-15-778Z.json) | 18:24:13 – 18:25:16 | 2369 | **37,24 ms** | 20,68 | 44,86 | 55,39 | 10,60 | 0 / 590 | 1180 / 1180 |
+| [2](evidencias/k6/smoke-summary-2026-11-07T21-26-19-224Z.json) | 18:25:16 – 18:26:19 | 2664 | **33,71 ms** | 17,52 | 48,19 | 57,50 | 9,66 | 0 / 590 | 1180 / 1180 |
+| [3](evidencias/k6/smoke-summary-2026-11-07T21-27-22-551Z.json) | 18:26:20 – 18:27:22 | 2959 | **31,22 ms** | 20,02 | 34,29 | 36,24 | 9,01 | 0 / 590 | 1180 / 1180 |
+
+**Comparação com a série anterior** (p95 de `POST /orders`):
+
+| Série | Execuções | Mediana | Amplitude (máx − mín) |
+|---|---|---|---|
+| Antes da evolução (16:50–16:54) | 35,59 · 33,24 · 31,29 ms | **33,24 ms** | 4,30 ms |
+| Após a evolução (18:24–18:27) | 37,24 · 33,71 · 31,22 ms | **33,71 ms** | 6,02 ms |
+| Diferença | | +0,47 ms (+1,4%) | +1,72 ms |
+
+As 3 execuções cumpriram o SLO e aprovaram todos os thresholds, com código de saída 0.
+
+**Análise:**
+
+- **Não há regressão mensurável.** A mediana subiu 0,47 ms, bem dentro da variação de uma mesma série (amplitude de 4 a 6 ms). As duas séries se sobrepõem quase por completo: 31,29–35,59 ms contra 31,22–37,24 ms. Com 3 execuções por série, uma diferença desse tamanho é ruído, não efeito.
+- **Era o resultado esperado:** a evolução não mexeu no caminho de `POST /orders`. O `CreateOrder` continua buscando os produtos por id, e a migration 003 só acrescentou colunas à tabela de produtos. O nginx e a interface web ficam fora do caminho medido.
+- **O banco continuou crescendo, sem efeito visível:** de 2369 para 2959 pedidos nesta série, contra 1479–2069 na anterior. Isso reforça que `POST /orders` e `GET /orders/:id` não dependem do volume (usam chave primária). O risco 1 (`GET /orders` sem paginação) continua valendo.
+- **A cautela de antes continua valendo:** num mesmo dia já medimos p95 de 68,73 ms numa execução isolada. Comparações só fazem sentido entre medianas de várias execuções, e diferenças de poucos milissegundos numa máquina local não indicam nada sozinhas.
+
 ## Riscos e limitações conhecidos
 
 1. **`GET /orders` não tem paginação.** O endpoint devolve todos os pedidos, cada um com seus itens. A latência e o tamanho da resposta crescem linearmente com o volume de pedidos, e o consumo de memória do processo também, porque monta a lista inteira antes de serializar. Com alguns milhares de pedidos, isso pode estourar qualquer SLO e degradar os outros endpoints. **Melhoria futura:** paginação por cursor (`?limit=` com `createdAt`/`id` como cursor, aproveitando o índice `orders_created_at_idx`) e um limite máximo por página. Esse endpoint ficou fora do smoke test justamente para que esse crescimento não contamine a medição do SLO.

@@ -35,15 +35,15 @@ flowchart TB
     subgraph sistema["API de Pedidos (docker compose)"]
         direction TB
         web["<b>Interface web</b><br/><i>Contêiner: nginx (sem root) + React</i><br/>Cardápio, carrinho e confirmação<br/>porta 8080"]
-        api["<b>API Fastify</b><br/><i>Contêiner: Node 26 + TypeScript</i><br/>POST /orders · GET /orders<br/>GET /orders/:id · POST /orders/:id/cancel"]
+        api["<b>API Fastify</b><br/><i>Contêiner: Node 26 + TypeScript</i><br/>POST /orders · GET /orders<br/>GET /orders/:id · POST /orders/:id/cancel<br/>GET /products (cardápio)"]
         ops["<b>Endpoints operacionais</b><br/><i>na mesma API</i><br/>GET /health · GET /metrics · GET /docs"]
         db[("<b>PostgreSQL 16</b><br/><i>Contêiner: banco de dados</i><br/>products (seed) · orders · order_items")]
     end
 
     k6["<b>k6</b><br/><i>Contêiner: grafana/k6, profile load</i><br/>Smoke test: cria e consulta pedidos<br/>e verifica os thresholds do SLO"]
 
-    atendente -- "Usa no navegador [HTTP]" --> web
-    web -- "/api/* repassado sem o prefixo<br/>[HTTP/JSON, mesma origem]" --> api
+    atendente -- "Navegador → nginx<br/>[HTTP, porta 8080]" --> web
+    web -- "nginx repassa /api/* sem o prefixo<br/>[HTTP/JSON, mesma origem]" --> api
     operador -- "Saúde, métricas Prometheus,<br/>Swagger UI [HTTP]" --> ops
     operador -- "docker compose --profile load<br/>run --rm k6" --> k6
     k6 -- "POST /orders e GET /orders/:id<br/>[HTTP/JSON]" --> api
@@ -62,7 +62,7 @@ flowchart TB
     style sistema fill:none,stroke:#0b4884,stroke-dasharray:5 5,color:#0b4884
 ```
 
-O sistema roda em três contêineres, orquestrados pelo `docker-compose.yml`:
+O sistema roda em três contêineres (interface web, API e PostgreSQL), orquestrados pelo `docker-compose.yml`. Uma ação do usuário percorre **navegador → nginx (interface web) → API → PostgreSQL**. A caixa "Endpoints operacionais" não é um contêiner: são rotas do mesmo processo da API.
 
 - **Interface web:** arquivos estáticos do React servidos por nginx sem root. O nginx também repassa `/api/*` para a API, para que o navegador fale sempre com a mesma origem (sem CORS). O total do carrinho é só uma prévia; o valor oficial vem da API.
 

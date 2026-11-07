@@ -10,7 +10,7 @@ API de pedidos de uma lanchonete com cardápio fixo. Cria, consulta, lista e can
 
 **Stack:** Node 26 (LTS) · TypeScript (strict) · Fastify 5 · PostgreSQL 16 · Knex · Vitest · pino + prom-client · k6 · Docker Compose · GitHub Actions.
 
-**Interface web** ([`web/`](web/)): React 19 · Vite · TypeScript (strict) · Vitest + Testing Library, servida por nginx sem root.
+> **Funcionalidade extra:** além do escopo do nível B, o projeto tem uma interface web de cardápio (React + nginx) e o endpoint `GET /products` que a alimenta. Veja [Funcionalidade extra: interface web](#funcionalidade-extra-interface-web-fora-do-escopo-do-nível-b).
 
 ## Como subir
 
@@ -20,15 +20,13 @@ Pré-requisito: **Docker** com Docker Compose.
 docker compose up --build
 ```
 
-Esse comando sobe o PostgreSQL, a API (que roda as migrations e o seed do cardápio) e a interface web. Cada serviço só inicia depois que o anterior passa no healthcheck.
+Esse comando sobe o PostgreSQL e a API, que roda as migrations e o seed do cardápio, e também a interface web (extra). Cada serviço só inicia depois que o anterior passa no healthcheck.
 
 | Serviço | Endereço |
 |---|---|
-| **Interface web (cardápio)** | **http://localhost:8080** |
 | API | http://localhost:3000 |
 | PostgreSQL | `localhost:5432` |
-
-A interface chama a API pelo próprio nginx, em `/api/` (ex.: `http://localhost:8080/api/products`). O navegador fala sempre com a mesma origem, sem CORS. Para usar outra porta na interface, defina `WEB_PORT`.
+| Interface web ([extra](#funcionalidade-extra-interface-web-fora-do-escopo-do-nível-b)) | http://localhost:8080 |
 
 **Não é preciso criar `.env`.** O `docker-compose.yml` já traz valores padrão de desenvolvimento (fictícios) no formato `${VAR:-padrão}`. Para mudar algum valor, crie um `.env` local a partir do `.env.example`. O `.env` é ignorado pelo git.
 
@@ -36,14 +34,7 @@ A interface chama a API pelo próprio nginx, em `/api/` (ex.: `http://localhost:
 
 ## Como testar o fluxo
 
-**Pela interface:** abra http://localhost:8080, adicione itens do cardápio, informe o nome e confirme. A tela de confirmação mostra o pedido como a API devolveu (total oficial e status) e permite cancelar. O total do carrinho é só uma prévia.
-
-| Celular | Desktop |
-|---|---|
-| ![Cardápio no celular](docs/evidencias/web/mobile-claro.png) | ![Cardápio no desktop com itens no carrinho](docs/evidencias/web/desktop-claro-com-itens.png) |
-| ![Carrinho aberto no celular, tema escuro](docs/evidencias/web/mobile-escuro-carrinho-aberto.png) | ![Confirmação do pedido no desktop](docs/evidencias/web/desktop-confirmacao.png) |
-
-**Pela API:** a documentação interativa (Swagger UI) fica em **http://localhost:3000/docs**.
+A documentação interativa (Swagger UI) fica em **http://localhost:3000/docs**. Para testar pelo navegador, use a [interface web](#funcionalidade-extra-interface-web-fora-do-escopo-do-nível-b) (extra).
 
 **Cardápio** (fixo, populado por seed):
 
@@ -102,12 +93,10 @@ Todos os erros usam o formato `{ statusCode, error, message, details? }`.
 | `GET` | `/orders` | Lista todos os pedidos, do mais recente ao mais antigo (sem paginação, ver riscos) |
 | `GET` | `/orders/:id` | Consulta um pedido (200; 400 id inválido; 404) |
 | `POST` | `/orders/:id/cancel` | Cancela um pedido `PENDING` (200; 404; 409 se já cancelado) |
-| `GET` | `/products` | Cardápio: id, nome, descrição, categoria e preço, ordenado por categoria e nome |
+| `GET` | `/products` | **Extra** (alimenta a interface web): cardápio com id, nome, descrição, categoria e preço, ordenado por categoria e nome |
 | `GET` | `/health` | Saúde da API e do banco (`200` ok, `503` banco fora) |
 | `GET` | `/metrics` | Métricas no formato Prometheus (histograma de latência e métricas do processo) |
 | `GET` | `/docs` | Swagger UI gerado a partir do [`docs/openapi.yaml`](docs/openapi.yaml) |
-
-As rotas acima são da API (porta 3000). Pela interface web (porta 8080), as mesmas rotas ficam em `/api/...`.
 
 Toda resposta traz o header `x-request-id`. A API aceita o valor enviado pelo cliente quando ele é seguro; caso contrário, gera um. O mesmo id aparece em todos os logs da requisição. Os logs são JSON, um por requisição, sem dados pessoais.
 
@@ -134,16 +123,13 @@ Para rodar fora do Docker, use o Node 26 (`.nvmrc`) e instale as dependências c
 | Funções | 95% |
 | Branches | 85% |
 
-**Interface web** (dentro de `web/`, sem precisar de banco nem da API, que é simulada nos testes):
+O CI roda:
+- lint, typecheck e lint do OpenAPI (Redocly);
+- testes com coverage num PostgreSQL de service container;
+- varredura de segredos;
+- um `docker compose up` do zero, verificando o `/health`.
 
-| Comando | O que roda |
-|---|---|
-| `npm run lint` / `npm run typecheck` | ESLint (com regras de hooks do React) e checagem de tipos |
-| `npm test` | Testes da lógica do carrinho, moeda, erros e do fluxo completo com Testing Library |
-| `npm run test:coverage` | Testes com coverage; falha abaixo do threshold do [`web/vite.config.ts`](web/vite.config.ts): linhas, statements e funções 95%, branches 90% |
-| `npm run dev` | Vite em http://localhost:5173, repassando `/api` para a API local |
-
-O CI roda lint, typecheck, lint do OpenAPI (Redocly), testes com coverage num PostgreSQL de service container, o job do frontend (lint, typecheck, testes e build), varredura de segredos e um `docker compose up` do zero. Esse último verifica o `/health`, a página web e `/api/products` passando pelo nginx.
+Para a interface web (extra), ele também roda o job do frontend e verifica, no compose, a página e `/api/products` passando pelo nginx.
 
 ## Teste de carga (k6) e SLO
 
@@ -157,7 +143,50 @@ docker compose --profile load run --rm k6
 
 O comando termina com código diferente de zero se algum threshold falhar. O resumo em JSON de cada execução fica em `tests/load/results/` (ignorado pelo git). Num Linux cujo usuário não seja o uid 1000, use `K6_UID=$(id -u) K6_GID=$(id -g) docker compose --profile load run --rm k6`. O k6 não roda no CI, de propósito.
 
-Plano de medição, ambiente, números medidos, consultas PromQL e riscos: **[docs/desempenho.md](docs/desempenho.md)**.
+Plano de medição, ambiente, números medidos (inclusive antes e depois da interface web), consultas PromQL e riscos: **[docs/desempenho.md](docs/desempenho.md)**. O SLO cobre só a API; a interface web não faz parte da medição.
+
+## Funcionalidade extra: interface web (fora do escopo do nível B)
+
+Esta seção descreve uma funcionalidade **além do escopo exigido pelo nível B**: uma interface web de cardápio, em [`web/`](web/), e o endpoint `GET /products` criado para ela. O escopo do nível B (API de pedidos, testes, CI, observabilidade e desempenho) está completo sem ela, e nada do que existia antes mudou de comportamento.
+
+**Onde:** **http://localhost:8080**. Ela sobe junto com o `docker compose up --build` e só inicia depois da API saudável. Para mudar a porta no host, defina `WEB_PORT`.
+
+**Fluxo de uso:**
+1. Abra http://localhost:8080. O cardápio aparece agrupado por categoria (lanches, acompanhamentos, bebidas), com descrição e preço em reais.
+2. Clique em **Adicionar** nos produtos. No celular, o carrinho é uma barra inferior que abre ao toque; no desktop, um painel lateral. Ajuste as quantidades (de 1 a 20) ou remova itens. O **total do carrinho é só uma prévia**.
+3. Informe seu nome e clique em **Confirmar pedido** (chama `POST /orders`).
+4. A confirmação mostra o pedido **como a API devolveu**: itens, status e o **total oficial** (`totalCents` do servidor). Dali dá para **cancelar** (`POST /orders/:id/cancel`) ou fazer um novo pedido.
+5. Erros da API aparecem como mensagens claras, sem quebrar a tela. Por exemplo: "Suco não está mais no cardápio." num 422, "Este pedido já estava cancelado." num 409, e um aviso de "fora do ar" quando a API não responde.
+
+| Celular | Desktop |
+|---|---|
+| ![Cardápio no celular](docs/evidencias/web/mobile-claro.png) | ![Cardápio no desktop com itens no carrinho](docs/evidencias/web/desktop-claro-com-itens.png) |
+| ![Carrinho aberto no celular, tema escuro](docs/evidencias/web/mobile-escuro-carrinho-aberto.png) | ![Confirmação do pedido no desktop](docs/evidencias/web/desktop-confirmacao.png) |
+
+Outras capturas, inclusive no tema escuro, estão em [`docs/evidencias/web/`](docs/evidencias/web/).
+
+**Como fala com a API:** o nginx (imagem sem root) serve os arquivos estáticos e repassa `/api/*` para a API. O navegador fala sempre com a mesma origem, então não há CORS e a página usa um CSP restrito. Por exemplo, `http://localhost:8080/api/products` é o mesmo que `http://localhost:3000/products`. A decisão e as alternativas descartadas estão na [ADR 0002](docs/adr/0002-frontend-com-proxy-reverso.md).
+
+**Acessibilidade e visual:**
+- funciona inteira pelo teclado, com foco visível;
+- campos com label e ilustrações com texto alternativo;
+- contraste WCAG AA nos dois temas (claro e escuro);
+- respeita `prefers-reduced-motion`;
+- mobile primeiro;
+- fotos reais dos produtos, de bancos de imagens com licença CC0 (origem e licença de cada uma em [`web/src/assets/products/CREDITS.md`](web/src/assets/products/CREDITS.md)), otimizadas em WebP com versões de 480 e 800 px; produto sem foto cai numa ilustração SVG própria;
+- "Mostarda Lanches" é uma marca fictícia.
+
+**Stack:** React 19 · Vite · TypeScript (strict) · Vitest + Testing Library · nginx.
+
+**Testes** (dentro de `web/`, com a API simulada; não precisam de banco):
+
+| Comando | O que roda |
+|---|---|
+| `npm ci` | Instala as dependências do frontend |
+| `npm run lint` / `npm run typecheck` | ESLint (com regras de hooks do React) e checagem de tipos |
+| `npm test` | Testes da lógica do carrinho, moeda, erros e do fluxo completo com Testing Library |
+| `npm run test:coverage` | Testes com coverage; falha abaixo do threshold do [`web/vite.config.ts`](web/vite.config.ts): linhas, statements e funções 95%, branches 90% |
+| `npm run dev` | Vite em http://localhost:5173, repassando `/api` para a API local (porta 3000) |
 
 ## Variáveis de ambiente
 
@@ -194,7 +223,8 @@ Sem o secret, o build funciona normalmente em qualquer ambiente sem interceptaç
 | Documento | Conteúdo |
 |---|---|
 | [docs/adr/0001-repository-pattern.md](docs/adr/0001-repository-pattern.md) | ADR: Repository Pattern e alternativa descartada |
-| [docs/c4/contexto.md](docs/c4/contexto.md) | Diagramas C4 (contexto e contêiner) |
+| [docs/adr/0002-frontend-com-proxy-reverso.md](docs/adr/0002-frontend-com-proxy-reverso.md) | ADR: interface web com nginx e proxy reverso (extra) |
+| [docs/c4/contexto.md](docs/c4/contexto.md) | Diagramas C4 (contexto e contêiner, com os três contêineres) |
 | [docs/openapi.yaml](docs/openapi.yaml) | Contrato OpenAPI 3.1 (também em `/docs`) |
 | [docs/desempenho.md](docs/desempenho.md) | SLO, plano de p95, medições e riscos |
 | [CONTRIBUTORS.md](CONTRIBUTORS.md) | Registro do processo e das decisões |

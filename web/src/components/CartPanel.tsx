@@ -3,6 +3,8 @@ import { MAX_QUANTITY, MIN_QUANTITY, itemCount, previewTotalCents, type CartActi
 import type { UserMessage } from '../lib/errors';
 import { formatCents } from '../lib/money';
 import { ErrorAlert } from './ErrorAlert';
+import { BagIcon, MinusIcon, PlusIcon, TrashIcon } from './icons';
+import { ProductPhoto, hasPhoto } from './ProductPhoto';
 
 const MAX_NAME_LENGTH = 100;
 
@@ -55,6 +57,7 @@ export function CartPanel({ cart, dispatch, onCheckout, submitting, error }: Pro
         onClick={() => setOpen((value) => !value)}
         aria-label={`${open ? 'Fechar carrinho' : 'Ver carrinho'}: ${count} ${count === 1 ? 'item' : 'itens'}, total estimado ${formatCents(total)}`}
       >
+        <BagIcon />
         <span className="cart-toggle-label">{open ? 'Fechar carrinho' : 'Ver carrinho'}</span>
         <span className="cart-count" key={count}>
           {count}
@@ -71,43 +74,54 @@ export function CartPanel({ cart, dispatch, onCheckout, submitting, error }: Pro
         </h2>
 
         {empty ? (
-          <p className="cart-empty">Seu carrinho está vazio. Que tal começar por um X-Burger?</p>
+          <div className="cart-empty">
+            <span className="cart-empty-icon">
+              <BagIcon />
+            </span>
+            <p>Seu carrinho está vazio. Que tal começar por um X-Burger?</p>
+          </div>
         ) : (
           <ul className="cart-lines" aria-label="Itens no carrinho">
             {cart.map((line) => (
               <li key={line.productId} className="cart-line">
-                <div className="cart-line-info">
-                  <span className="cart-line-name">{line.name}</span>
-                  <span className="cart-line-price">{formatCents(line.priceCents * line.quantity)}</span>
-                </div>
-                <div className="cart-line-actions">
-                  <div className="stepper" role="group" aria-label={`Quantidade de ${line.name}`}>
+                {hasPhoto(line.productId) && (
+                  <ProductPhoto productId={line.productId} category="lanches" className="cart-line-photo" sizes="56px" decorative />
+                )}
+                <div className="cart-line-main">
+                  <div className="cart-line-info">
+                    <span className="cart-line-name">{line.name}</span>
+                    <span className="cart-line-price">{formatCents(line.priceCents * line.quantity)}</span>
+                  </div>
+                  <div className="cart-line-actions">
+                    <div className="stepper" role="group" aria-label={`Quantidade de ${line.name}`}>
+                      <button
+                        type="button"
+                        onClick={() => dispatch({ type: 'decrement', productId: line.productId })}
+                        disabled={line.quantity <= MIN_QUANTITY}
+                        aria-label={`Diminuir quantidade de ${line.name}`}
+                      >
+                        <MinusIcon />
+                      </button>
+                      <output aria-label={`${line.name}: ${line.quantity}`}>{line.quantity}</output>
+                      <button
+                        type="button"
+                        onClick={() => dispatch({ type: 'increment', productId: line.productId })}
+                        disabled={line.quantity >= MAX_QUANTITY}
+                        aria-label={`Aumentar quantidade de ${line.name}`}
+                      >
+                        <PlusIcon />
+                      </button>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => dispatch({ type: 'decrement', productId: line.productId })}
-                      disabled={line.quantity <= MIN_QUANTITY}
-                      aria-label={`Diminuir quantidade de ${line.name}`}
+                      className="link-button"
+                      onClick={() => dispatch({ type: 'remove', productId: line.productId })}
+                      aria-label={`Remover ${line.name} do carrinho`}
                     >
-                      −
-                    </button>
-                    <output aria-label={`${line.name}: ${line.quantity}`}>{line.quantity}</output>
-                    <button
-                      type="button"
-                      onClick={() => dispatch({ type: 'increment', productId: line.productId })}
-                      disabled={line.quantity >= MAX_QUANTITY}
-                      aria-label={`Aumentar quantidade de ${line.name}`}
-                    >
-                      +
+                      <TrashIcon />
+                      Remover
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    className="link-button"
-                    onClick={() => dispatch({ type: 'remove', productId: line.productId })}
-                    aria-label={`Remover ${line.name} do carrinho`}
-                  >
-                    Remover
-                  </button>
                 </div>
               </li>
             ))}

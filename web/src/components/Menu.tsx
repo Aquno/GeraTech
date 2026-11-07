@@ -1,7 +1,8 @@
 import type { Product, ProductCategory } from '../api/types';
 import { MAX_QUANTITY } from '../cart/cart';
 import { formatCents } from '../lib/money';
-import { ProductIllustration } from './ProductIllustration';
+import { PlusIcon } from './icons';
+import { ProductPhoto } from './ProductPhoto';
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   lanches: 'Lanches',
@@ -24,13 +25,24 @@ interface CardProps {
   product: Product;
   quantityInCart: number;
   onAdd: (product: Product) => void;
+  /** Os primeiros cards aparecem sem rolar: a foto carrega na hora. */
+  eager: boolean;
 }
 
-function ProductCard({ product, quantityInCart, onAdd }: CardProps) {
+function ProductCard({ product, quantityInCart, onAdd, eager }: CardProps) {
   const atLimit = quantityInCart >= MAX_QUANTITY;
   return (
     <li className="product-card">
-      <ProductIllustration productId={product.id} category={product.category} className="product-art" />
+      <div className="product-media">
+        <ProductPhoto
+          productId={product.id}
+          category={product.category}
+          className="product-photo"
+          sizes="(min-width: 1200px) 280px, (min-width: 560px) 45vw, 100vw"
+          eager={eager}
+        />
+        {quantityInCart > 0 && <p className="product-in-cart">{quantityInCart} no carrinho</p>}
+      </div>
       <div className="product-body">
         <h4 className="product-name">{product.name}</h4>
         <p className="product-description">{product.description}</p>
@@ -38,15 +50,15 @@ function ProductCard({ product, quantityInCart, onAdd }: CardProps) {
           <span className="product-price">{formatCents(product.priceCents)}</span>
           <button
             type="button"
-            className="button button-primary"
+            className="button button-primary button-add"
             onClick={() => onAdd(product)}
             disabled={atLimit}
             aria-label={atLimit ? `${product.name}: limite de ${MAX_QUANTITY} unidades` : `Adicionar ${product.name} ao carrinho`}
           >
+            {!atLimit && <PlusIcon />}
             {atLimit ? `Limite de ${MAX_QUANTITY}` : 'Adicionar'}
           </button>
         </div>
-        {quantityInCart > 0 && <p className="product-in-cart">{quantityInCart} no carrinho</p>}
       </div>
     </li>
   );
@@ -62,28 +74,41 @@ export function Menu({ products, quantityOf, onAdd }: MenuProps) {
   const groups = groupByCategory(products);
   return (
     <section className="menu" aria-labelledby="menu-title">
-      <h2 id="menu-title" className="section-title">
-        Cardápio
-      </h2>
-      <nav aria-label="Categorias" className="category-nav">
-        <ul>
-          {groups.map(({ category }) => (
-            <li key={category}>
-              <a href={`#categoria-${category}`} className="chip">
-                {CATEGORY_LABELS[category]}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      {groups.map(({ category, products: items }) => (
+      <div className="menu-header">
+        <h2 id="menu-title" className="section-title">
+          Cardápio
+        </h2>
+        <nav aria-label="Categorias" className="category-nav">
+          <ul>
+            {groups.map(({ category }) => (
+              <li key={category}>
+                <a href={`#categoria-${category}`} className="chip">
+                  {CATEGORY_LABELS[category]}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+      {groups.map(({ category, products: items }, groupIndex) => (
         <section key={category} id={`categoria-${category}`} className="category" aria-labelledby={`titulo-${category}`}>
-          <h3 id={`titulo-${category}`} className="category-title">
-            {CATEGORY_LABELS[category]}
-          </h3>
+          <div className="category-header">
+            <h3 id={`titulo-${category}`} className="category-title">
+              {CATEGORY_LABELS[category]}
+            </h3>
+            <span className="category-count">
+              {items.length} {items.length === 1 ? 'opção' : 'opções'}
+            </span>
+          </div>
           <ul className="product-grid">
             {items.map((product) => (
-              <ProductCard key={product.id} product={product} quantityInCart={quantityOf(product.id)} onAdd={onAdd} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                quantityInCart={quantityOf(product.id)}
+                onAdd={onAdd}
+                eager={groupIndex === 0}
+              />
             ))}
           </ul>
         </section>
