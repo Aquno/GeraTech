@@ -17,7 +17,9 @@ Este é o meu registro de como construí este projeto, na ordem em que as coisas
 | `0092106` Merge pull request #1 (tag `v1.0.0-entrega`) | `chore/ajustes-finais` | PR #1 | 9 |
 | `a09c3ff` Merge pull request #2 | `feat/cardapio-api` | PR #2 | 10 |
 | `615d688` Merge pull request #3 | `feat/web-cardapio` | PR #3 | 10 |
-| (esta documentação final) | `docs/evolucao-final` | PR | 10 |
+| `7bdd02b` (sem merge commit próprio: entrou no `main` junto com o PR #5) | `docs/evolucao-final` | PR #4 | 10 |
+| `72cffb5` Merge pull request #5 | `feat/redesign-ui` | PR #5 | 11 |
+| `c71df20` Merge pull request #6 | `chore/claude-md-node` | PR #6 | 11 |
 
 ---
 
@@ -150,3 +152,45 @@ Depois da entrega, evoluí o projeto para algo mais visual, com uma regra princi
 
 - **Matheus Aquino:** pedi repetir as 3 execuções do k6 depois da evolução. A mediana do p95 de `POST /orders` foi de 33,24 ms (antes) para 33,71 ms (depois), dentro da variação de uma mesma série: não há regressão mensurável. Deixei registrado que **o SLO cobre só a API** e que a interface web não faz parte da medição.
 - **Matheus Aquino:** pedi que o README apresentasse a interface web numa seção identificada como **funcionalidade extra, fora do escopo do nível B**, e que o C4 de contêiner mostrasse os três contêineres e o fluxo navegador → nginx → API → PostgreSQL.
+
+## 11. Redesign com fotos reais e ajustes antes da entrega (`feat/redesign-ui`, `chore/claude-md-node`, `docs/ajustes-pre-entrega`)
+
+**Redesign da interface (PR #5)**
+
+- **Matheus Aquino:** pedi um redesign com visão de UI/UX, mais bonito e moderno, **com fotos reais nos lanches**, sem quebrar nada do que já funcionava.
+- **Matheus Aquino:** fotos reais contrariavam a regra anterior do `CLAUDE.md` ("ilustrações são SVG próprios", "não use imagens da internet"). Decidi usar **bancos de imagens gratuitos com licença que permite uso comercial** e atualizar a regra. Ela passou a ser: só fotos CC0/domínio público com licença conferida, sem marca, logotipo nem marca d'água, e ilustração SVG como fallback para produto sem foto.
+- **Claude Code:** buscou candidatas com licença CC0/domínio público pelo [Openverse](https://openverse.org) e conferiu cada uma visualmente. Descartou fotos com marca visível (papel de restaurante, produtos de rede de fast food) e uma candidata ao X-Burger que aparecia como domínio público mas tinha a **marca d'água de direitos autorais de outra pessoa**. Recortou as escolhidas em 4:3 e otimizou em WebP (versões de 480 e 800 px, de 15 a 49 KB).
+- **Origem das fotos:** a fonte, o autor e a licença de cada uma estão em [`web/src/assets/products/CREDITS.md`](web/src/assets/products/CREDITS.md), citado também no README e no rodapé da página. As fotos ficam dentro do projeto e são servidas pelo próprio nginx, então o CSP (`img-src 'self'`) continua valendo.
+- **Claude Code:** redesenhou a interface:
+  - cabeçalho fixo;
+  - destaque com composição de fotos no desktop e versão compacta no celular, para o primeiro produto já aparecer na primeira tela;
+  - cards horizontais no celular e verticais com foto grande a partir de 560 px;
+  - carrinho com miniaturas;
+  - botões com ícones;
+  - paleta refinada nos dois temas.
+
+  Conferiu por cálculo o contraste de todas as combinações de cor (WCAG AA) e revisou as telas por captura em celular e desktop. As capturas mostraram dois defeitos (fotos do destaque esticadas no desktop e um botão que deveria sumir no celular), corrigidos antes do PR.
+- **Matheus Aquino:** pela regra dos testes, só um arquivo de teste existente mudou: o `web/src/App.test.tsx` passou a procurar o texto alternativo da foto em vez do da ilustração, com o mesmo rigor (nome exato e contagem de 5 imagens). Entraram 12 testes novos, e os 5 bugs introduzidos de propósito no código novo foram detectados.
+- **Matheus Aquino:** o PR #4 (documentação) ainda estava aberto quando o redesign começou. A branch do redesign partiu dele, e os dois entraram no `main` juntos, pelo merge do PR #5.
+
+**Correção do `CLAUDE.md` (PR #6)**
+
+- **Matheus Aquino:** corrigi a menção a "Node 20" no `CLAUDE.md`, que estava desatualizada desde a migração para o Node 26 (etapa 5).
+
+**Auditoria e ajustes antes da entrega (`docs/ajustes-pre-entrega`)**
+
+- **Matheus Aquino:** pedi uma **auditoria somente leitura** antes da entrega. **Claude Code:** verificou:
+  - subida do zero num ambiente limpo e o fluxo completo pela API e pelo nginx;
+  - lint, testes e coverage da API e do web contra os thresholds, e nenhum teste sem asserção;
+  - o CI;
+  - gitleaks no histórico inteiro;
+  - CSP e requisições externas no navegador, axe-core e contraste;
+  - as capturas comparadas pixel a pixel;
+  - os links do README e o OpenAPI contra as rotas registradas.
+
+  Nenhum item bloqueava a entrega.
+- **Matheus Aquino:** dos pontos levantados, escolhi corrigir:
+  - o `.env.example`, que ganhou uma seção comentada com as variáveis opcionais (incluindo `WEB_PORT`), com os mesmos valores fictícios de desenvolvimento do compose;
+  - este registro;
+  - uma seção datada de "Notas posteriores" na ADR 0001 (Node 26, cinco endpoints, decisão mantida), **sem alterar o texto original**;
+  - "ilustrações" por "fotos" no README.
