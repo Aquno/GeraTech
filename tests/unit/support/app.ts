@@ -2,8 +2,10 @@ import { CancelOrder } from '../../../src/application/cancel-order';
 import { CreateOrder } from '../../../src/application/create-order';
 import { GetOrder } from '../../../src/application/get-order';
 import { ListOrders } from '../../../src/application/list-orders';
+import { ListProducts } from '../../../src/application/list-products';
 import type { AppDependencies } from '../../../src/http/app';
 import { InMemoryOrderRepository, InMemoryProductRepository, SUCO, X_BURGER } from './fakes';
+import { InMemoryMenuRepository, MENU_BATATA, MENU_REFRIGERANTE, MENU_SUCO, MENU_X_BURGER, MENU_X_SALADA } from './menu';
 
 export const ORDER_ID = '11111111-1111-4111-8111-111111111111';
 export const MISSING_ID = '00000000-0000-4000-8000-000000000000';
@@ -16,6 +18,9 @@ export function inMemoryDependencies(overrides: Partial<AppDependencies> = {}): 
     getOrder: new GetOrder(orders),
     listOrders: new ListOrders(orders),
     cancelOrder: new CancelOrder(orders),
+    listProducts: new ListProducts(
+      new InMemoryMenuRepository([MENU_X_BURGER, MENU_X_SALADA, MENU_BATATA, MENU_REFRIGERANTE, MENU_SUCO]),
+    ),
     checkDatabase: () => Promise.resolve(),
     ...overrides,
   };

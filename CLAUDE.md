@@ -11,9 +11,10 @@ API de pedidos em Node 20 + TypeScript + Fastify + PostgreSQL, com um domínio s
   - `GET /orders/:id`
   - `GET /orders`
   - `POST /orders/:id/cancel`
+  - `GET /products` (cardápio, somente leitura, ordenado por categoria e nome)
 - **Endpoints operacionais** (fora do contrato de negócio): `GET /health` e `GET /metrics` (Prometheus).
 - **Logs:** JSON (pino), um por requisição, com request id (`x-request-id`). Nunca registre `customerName`, corpos de requisição ou outros dados pessoais.
-- **Cardápio:** os produtos ficam numa tabela populada por seed, com ids em formato slug. Não há endpoint de cadastro de produtos.
+- **Cardápio:** os produtos ficam numa tabela populada por seed, com ids em formato slug, `description` e `category` (`lanches`, `acompanhamentos`, `bebidas`). É somente leitura: `GET /products` lista, e não há endpoint de cadastro de produtos.
 - **Dinheiro:** todos os valores monetários são inteiros em centavos (campos com sufixo `Cents`). Nunca use float para dinheiro.
 - **Preço:** o preço sempre vem do cardápio. A requisição traz apenas `productId` e `quantity`; nunca aceite preço vindo do cliente.
 - **Itens únicos:** o mesmo `productId` não pode aparecer duas vezes no mesmo pedido. Validado no domínio; responde 400 com `details` indicando o item duplicado.

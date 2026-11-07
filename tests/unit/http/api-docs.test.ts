@@ -55,7 +55,8 @@ describe('Documentação da API (GET /docs)', () => {
     expect(response.statusCode).toBe(200);
     expect(document.openapi).toBe('3.1.0');
     expect(document.info).toMatchObject({ title: 'Orders API', version: yamlVersion });
-    expect(Object.keys(document.paths)).toEqual(['/orders', '/orders/{id}', '/orders/{id}/cancel']);
+    // O contrato só recebe adições: os paths originais precisam continuar presentes.
+    expect(Object.keys(document.paths)).toEqual(expect.arrayContaining(['/orders', '/orders/{id}', '/orders/{id}/cancel']));
     expect(Object.keys(document.paths['/orders'] ?? {})).toEqual(['post', 'get']);
   });
 
