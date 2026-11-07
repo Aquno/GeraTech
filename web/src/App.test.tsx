@@ -14,7 +14,7 @@ async function renderApp() {
 const cartList = () => screen.getByRole('list', { name: 'Itens no carrinho' });
 
 describe('Cardápio', () => {
-  it('agrupa os produtos por categoria, com descrição, preço em reais e ilustração', async () => {
+  it('agrupa os produtos por categoria, com descrição, preço em reais e foto', async () => {
     mockApi({});
     await renderApp();
 
@@ -25,8 +25,9 @@ describe('Cardápio', () => {
     expect(within(lanches).getAllByRole('heading', { level: 4 }).map((h) => h.textContent)).toEqual(['X-Burger', 'X-Salada']);
     expect(within(lanches).getByText('Hambúrguer com queijo.')).toBeInTheDocument();
     expect(within(lanches).getByText('R$ 18,00')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Ilustração de uma porção de batatas fritas' })).toBeInTheDocument();
-    expect(screen.getAllByRole('img', { name: /^Ilustração/ })).toHaveLength(5);
+    expect(screen.getByRole('img', { name: 'Foto de batatas fritas douradas com sal grosso' })).toBeInTheDocument();
+    // Uma foto com texto alternativo por produto (a foto do destaque é decorativa e não conta).
+    expect(screen.getAllByRole('img', { name: /^Foto de/ })).toHaveLength(5);
   });
 
   it('mostra erro claro com o servidor fora do ar e se recupera ao tentar de novo', async () => {

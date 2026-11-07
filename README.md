@@ -173,7 +173,8 @@ Outras capturas, inclusive no tema escuro, estão em [`docs/evidencias/web/`](do
 - contraste WCAG AA nos dois temas (claro e escuro);
 - respeita `prefers-reduced-motion`;
 - mobile primeiro;
-- ilustrações em SVG próprio, e "Mostarda Lanches" é uma marca fictícia.
+- fotos reais dos produtos, de bancos de imagens com licença CC0 (origem e licença de cada uma em [`web/src/assets/products/CREDITS.md`](web/src/assets/products/CREDITS.md)), otimizadas em WebP com versões de 480 e 800 px; produto sem foto cai numa ilustração SVG própria;
+- "Mostarda Lanches" é uma marca fictícia.
 
 **Stack:** React 19 · Vite · TypeScript (strict) · Vitest + Testing Library · nginx.
 

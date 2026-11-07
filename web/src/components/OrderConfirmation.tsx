@@ -3,7 +3,8 @@ import type { Order } from '../api/types';
 import type { UserMessage } from '../lib/errors';
 import { formatCents } from '../lib/money';
 import { ErrorAlert } from './ErrorAlert';
-import { ProductIllustration } from './ProductIllustration';
+import { CheckIcon } from './icons';
+import { ProductPhoto } from './ProductPhoto';
 
 const STATUS_LABELS: Record<Order['status'], string> = {
   PENDING: 'Recebido',
@@ -33,6 +34,9 @@ export function OrderConfirmation({ order, onCancel, cancelling, error, onNewOrd
   return (
     <section className="confirmation" aria-labelledby="confirmation-title">
       <div className="confirmation-card">
+        <span className={`confirmation-badge confirmation-badge-${order.status.toLowerCase()}`} aria-hidden="true">
+          <CheckIcon />
+        </span>
         <h2 id="confirmation-title" className="section-title" tabIndex={-1} ref={headingRef}>
           {cancelled ? 'Pedido cancelado' : `Pedido recebido, ${order.customerName}!`}
         </h2>
@@ -89,7 +93,13 @@ export function OrderConfirmation({ order, onCancel, cancelling, error, onNewOrd
           </button>
         </div>
       </div>
-      <ProductIllustration productId={order.items[0]?.productId ?? ''} category="lanches" className="confirmation-art" decorative />
+      <ProductPhoto
+        productId={order.items[0]?.productId ?? ''}
+        category="lanches"
+        className="confirmation-art"
+        sizes="(min-width: 960px) 320px, 80vw"
+        decorative
+      />
     </section>
   );
 }
