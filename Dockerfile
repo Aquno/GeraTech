@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 RUN --mount=type=secret,id=npm_ca \
     if [ -f /run/secrets/npm_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/npm_ca; fi; \
     npm ci --no-audit --no-fund
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
