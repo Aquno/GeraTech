@@ -40,5 +40,20 @@ services:
       retries: 5
       start_period: 15s
 
+  # Teste de carga. Só sobe com o profile "load": docker compose --profile load run --rm k6
+  k6:
+    image: grafana/k6:2.3.0
+    profiles: ["load"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://api:${PORT:-3000}
+      RESULTS_DIR: /results
+    volumes:
+      - ./tests/load:/scripts:ro
+      - ./tests/load/results:/results
+    command: ["run", "/scripts/smoke.js"]
+
 volumes:
   pgdata:
