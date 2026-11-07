@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Permissão mínima: os jobs só leem o código.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Qualidade (lint, typecheck, OpenAPI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node (versão do .nvmrc)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint do OpenAPI (Redocly)
+        run: npx --yes @redocly/cli@2.76.0 lint docs/openapi.yaml
+
+  tests:
+    name: Testes (unit + integração) com coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: orders_user
+          POSTGRES_PASSWORD: orders_pass
+          POSTGRES_DB: orders_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orders_user -d orders_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Credenciais fictícias, válidas só para o container efêmero deste job.
+      TEST_DATABASE_URL: postgresql://orders_user:orders_pass@localhost:5432/orders_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node (versão do .nvmrc)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testes com coverage (falha abaixo do threshold do vitest.config.mts)
+        run: npm run test:coverage
+
+      - name: Salvar relatório de coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+          if-no-files-found: warn
+
+  secrets:
+    name: Varredura de segredos (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - name: Checkout (histórico completo)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Binário oficial com checksum conferido. A gitleaks-action exige licença paga em repositórios de organização.
+      - name: Instalar gitleaks
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSLo "$archive" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check
+          tar -xzf "$archive" gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+
+      - name: Varrer o histórico do repositório
+        run: gitleaks git . --redact --verbose --no-banner
+
+  compose:
+    name: Docker Compose sobe do zero (healthcheck)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Sem .env: o compose precisa subir só com os valores padrão dele.
+      - name: docker compose up --build (espera o healthcheck)
+        run: docker compose up --build --detach --wait --wait-timeout 180
+
+      - name: GET /health deve responder 200
+        run: |
+          status=$(curl -s -o response.json -w '%{http_code}' http://localhost:3000/health)
+          echo "HTTP $status: $(cat response.json)"
+          test "$status" = "200"
+
+      - name: Logs dos containers (em caso de falha)
+        if: ${{ failure() }}
+        run: docker compose logs
+
+      - name: docker compose down -v
+        if: ${{ always() }}
+        run: docker compose down -v
