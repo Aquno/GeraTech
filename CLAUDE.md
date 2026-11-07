@@ -19,7 +19,9 @@ API de pedidos em Node 20 + TypeScript + Fastify + PostgreSQL, com um domínio s
 - **Preço:** o preço sempre vem do cardápio. A requisição traz apenas `productId` e `quantity`; nunca aceite preço vindo do cliente.
 - **Itens únicos:** o mesmo `productId` não pode aparecer duas vezes no mesmo pedido. Validado no domínio; responde 400 com `details` indicando o item duplicado.
 - **Arquitetura:** Repository Pattern. O domínio depende de interfaces de repositório, nunca do driver/ORM diretamente (ver `docs/adr/0001-repository-pattern.md`).
-- **CI:** a pasta de workflows é `.github/workflows` (minúsculo).
+- **Interface web:** fica em `web/` (React + Vite + TypeScript strict), separada da API, com package.json, ESLint e testes próprios. Fala com a API só por `/api/` na mesma origem (nginx em produção, proxy do Vite em dev). O total do carrinho é só prévia: o valor oficial é o `totalCents` da API. Sem bibliotecas de componentes pesadas; ilustrações são SVG próprios.
+- **Compose:** `docker compose up --build` sobe db, api e web (porta 8080) com um único comando. Não altere as portas existentes (API 3000, banco 5432).
+- **CI:** a pasta de workflows é `.github/workflows` (minúsculo). Jobs existentes não podem ser removidos nem enfraquecidos.
 
 ## Referências
 

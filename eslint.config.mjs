@@ -4,7 +4,8 @@ import tseslint from 'typescript-eslint';
 const layerMessage = (layer) => `A camada ${layer} não pode depender de camadas externas (ver CLAUDE.md).`;
 
 export default tseslint.config(
-  { ignores: ['dist/', 'coverage/', 'node_modules/'] },
+  // web/ tem o próprio ESLint (React), rodado de dentro da pasta.
+  { ignores: ['dist/', 'coverage/', 'node_modules/', 'web/'] },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
