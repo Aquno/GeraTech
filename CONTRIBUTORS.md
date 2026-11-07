@@ -4,17 +4,20 @@ Este é o meu registro de como construí este projeto, na ordem em que as coisas
 
 **Sobre a autoria:** o código foi gerado com assistência do **Claude Code** (Anthropic). Defini o escopo, as regras e a ordem das etapas, e decidi cada ponto listado aqui. Revisei o que foi gerado e validei os resultados rodando lint, testes, coverage, o fluxo com curl, o CI no GitHub Actions e o teste de carga. Nas linhas abaixo, "Matheus Aquino" é o que eu fiz ou decidi. "Claude Code" é o que foi gerado ou executado pela ferramenta a meu pedido.
 
-**Sobre o histórico do git:** o repositório começa num commit único, `chore: projeto base da Orders API` (`cf3842f`). As etapas 1 a 6 aconteceram antes desse commit e estão consolidadas nele. Reescrevi o início do histórico de propósito, para que testes e CI entrassem por uma branch própria. A partir da etapa 7, cada etapa corresponde a uma branch com merge no `main`:
+**Sobre o histórico do git:** o repositório começa num commit único, `chore: projeto base da Orders API` (`cf3842f`). As etapas 1 a 6 aconteceram antes desse commit e estão consolidadas nele. Reescrevi o início do histórico de propósito, para que testes e CI entrassem por uma branch própria. A partir da etapa 7, cada etapa corresponde a uma branch integrada ao `main`.
 
-| Commit | Etapa |
-|---|---|
-| `cf3842f` chore: projeto base da Orders API | 1 a 6 |
-| `4402f68` test: testes unitários e de integração… | 7 |
-| `f4c2c58` ci: workflow do GitHub Actions | 7 |
-| `933e22c` Merge branch 'feat/testes-ci' | 7 |
-| `ef479b0` feat: logs estruturados, métricas Prometheus e smoke test k6… | 8 |
-| `1e4146a` Merge branch 'feat/observabilidade-k6' | 8 |
-| branch `docs/readme-entrega` | 9 |
+**Como as branches foram integradas:** as três primeiras (`feat/testes-ci`, `feat/observabilidade-k6` e `docs/readme-entrega`) foram integradas **localmente**, com `git merge --no-ff` seguido de push, depois de eu conferir o CI da branch. A partir de `chore/ajustes-finais`, o fluxo passou a ser por **pull request** no GitHub: o CI roda no PR, e só faço o merge com ele verde.
+
+| Integração no `main` | Branch | Como | Etapa |
+|---|---|---|---|
+| `cf3842f` chore: projeto base da Orders API | (commit inicial) | direto | 1 a 6 |
+| `933e22c` Merge branch 'feat/testes-ci' | `feat/testes-ci` | merge local | 7 |
+| `1e4146a` Merge branch 'feat/observabilidade-k6' | `feat/observabilidade-k6` | merge local | 8 |
+| `7d15699` Merge branch 'docs/readme-entrega' | `docs/readme-entrega` | merge local | 9 |
+| `0092106` Merge pull request #1 (tag `v1.0.0-entrega`) | `chore/ajustes-finais` | PR #1 | 9 |
+| `a09c3ff` Merge pull request #2 | `feat/cardapio-api` | PR #2 | 10 |
+| `615d688` Merge pull request #3 | `feat/web-cardapio` | PR #3 | 10 |
+| (esta documentação final) | `docs/evolucao-final` | PR | 10 |
 
 ---
 
@@ -108,3 +111,42 @@ Este é o meu registro de como construí este projeto, na ordem em que as coisas
 - **Matheus Aquino:** pedi que a pasta de resultados do k6 funcionasse em hosts Linux e macOS. **Claude Code:** reproduziu o erro de permissão com semântica de Linux e corrigiu rodando o container com o uid do host. Cada execução agora grava um arquivo próprio. No caminho, encontrou outro problema: o k6 sai com código 0 mesmo quando não consegue gravar o resumo. As execuções afetadas foram descartadas e a medição foi repetida.
 - **Matheus Aquino:** pedi **3 execuções do smoke** com p95, mediana e amplitude, e uma análise honesta da variação, incluindo o número que destoou em outro horário.
 - **Matheus Aquino:** revisei README, este registro e a conferência final da estrutura do repositório antes da entrega.
+- **Matheus Aquino:** fiz ajustes finais numa branch própria (`chore/ajustes-finais`): versionei os resumos JSON das 3 execuções do k6 como evidência em `docs/evidencias/k6/` e fixei o runner do CI em `ubuntu-24.04` em vez de `ubuntu-latest`, para o ambiente do CI não mudar sozinho. Foi a primeira branch integrada por pull request (PR #1).
+
+## 10. Evolução: interface web (`feat/cardapio-api`, `feat/web-cardapio`, `docs/evolucao-final`)
+
+Depois da entrega, evoluí o projeto para algo mais visual, com uma regra principal: **nada do que existia podia quebrar**. Tudo nesta etapa é funcionalidade extra, fora do escopo exigido pelo nível B.
+
+**Preparação**
+
+- **Matheus Aquino:** antes de mexer em qualquer coisa, **congelei a versão de entrega na tag `v1.0.0-entrega`** (commit `0092106`, merge do PR #1, com o CI verde). Se a evolução desse errado, a entrega continuava intacta e recuperável com `git switch -c <branch> v1.0.0-entrega`.
+- **Matheus Aquino:** decidi fazer **só o cardápio**: listar os produtos e montar o pedido com eles, **sem montagem de lanche** (escolha de ingredientes, adicionais). Personalizar o lanche mudaria o domínio: itens com variações, preço composto e novas regras de validação. Com só o cardápio, o pedido continua sendo uma lista de produtos com quantidade, e nenhuma regra de negócio muda.
+
+**API do cardápio (PR #2)**
+
+- **Matheus Aquino:** pedi a API primeiro, separada da interface:
+  - descrição e categoria dos produtos numa migration nova (`003`), sem editar as antigas;
+  - `GET /products` seguindo as mesmas camadas (caso de uso `ListProducts`);
+  - o contrato só recebendo adições, com a versão indo de 0.2.0 para 0.3.0.
+- **Matheus Aquino:** a regra inicial era "testes existentes não podem ser alterados". **Claude Code:** encontrou um **conflito** entre essa regra e "o contrato só recebe adições": o `api-docs.test.ts` comparava a lista **exata** de paths do contrato, então qualquer endpoint novo o quebraria. Parou, mostrou o teste falhando e as opções, sem alterar nada.
+- **Matheus Aquino:** **corrigi a regra** para: **testes existentes podem ser ajustados para acomodar adições, mas nunca podem ter asserções removidas ou enfraquecidas**, e cada arquivo alterado precisa ser listado com o motivo. Escolhi trocar a lista exata por `expect.arrayContaining` com os três paths originais (os paths de antes continuam obrigatórios). O path novo ficou verificado num teste novo. No fim, só dois arquivos de teste existentes mudaram (`api-docs.test.ts` e o helper `tests/unit/support/app.ts`), cada um listado com o motivo.
+- **Matheus Aquino:** a primeira versão tinha o caso de uso de listagem como **dependência opcional** do `buildApp`, só para não tocar no helper dos testes. Sem ele, a rota simplesmente não existiria. Pedi que virasse **dependência obrigatória**, com o helper de testes fornecendo um fake: uma rota que some sem aviso seria um comportamento escondido. Mantive a separação `MenuProductRepository` / `ProductRepository` por segregação de interfaces (quem cria pedidos não depende da listagem).
+- **Matheus Aquino:** a primeira versão deixava `category` aceitar nulo no banco e escondia do cardápio os produtos sem categoria. Pedi **categoria obrigatória no banco** (`NOT NULL`), funcionando tanto num banco novo quanto num banco que já tinha os produtos do seed. **Claude Code:** fez a migration preencher os produtos existentes e só depois aplicar o `NOT NULL`. Se sobrar algum produto desconhecido, a migration falha e é revertida inteira, sem inventar categoria. Testou os três cenários (banco novo, com seed e com produto desconhecido). A migration rodou de verdade no meu banco local, com milhares de pedidos.
+
+**Interface web (PR #3)**
+
+- **Matheus Aquino:** defini os requisitos:
+  - React + Vite + TypeScript strict numa pasta `web/` separada, sem bibliotecas de componentes pesadas;
+  - cardápio por categoria, carrinho com limite de 1 a 20, finalização e confirmação com cancelamento;
+  - identidade visual de lanchonete, mobile primeiro, modo claro e escuro;
+  - acessibilidade (teclado, foco, labels, contraste, `prefers-reduced-motion`);
+  - o `docker compose up --build` continuando a subir tudo com um único comando.
+- **Matheus Aquino:** estabeleci que **o total oficial vem sempre da API**: o carrinho mostra só uma prévia, e a confirmação exibe o `totalCents` devolvido pelo servidor. **Claude Code:** protegeu isso com um teste em que a API simulada devolve um total diferente da prévia (R$ 45,00 contra R$ 44,00), e a tela precisa mostrar o do servidor. Também introduziu de propósito o bug "a confirmação recalcula o total no front", e o teste o detectou.
+- **Matheus Aquino:** escolhi **proxy reverso em vez de CORS**. O nginx serve a interface e repassa `/api/*` para a API, então o navegador fala sempre com a mesma origem, sem CORS, com um CSP restrito e sem nenhuma mudança na API. O custo é um contêiner a mais. A decisão e as alternativas descartadas (CORS na API, estáticos servidos pela API) estão na [ADR 0002](docs/adr/0002-frontend-com-proxy-reverso.md).
+- **Claude Code:** os testes do frontend pegaram, durante o desenvolvimento, um defeito real de acessibilidade (o nome do botão do carrinho saía grudado para leitores de tela) e um `setState` síncrono dentro de efeito, acusado pela regra de hooks do React. Os dois foram corrigidos. O contraste de todas as combinações de cor dos dois temas foi conferido por cálculo (WCAG AA). As capturas de tela, em celular e desktop, estão em `docs/evidencias/web/`.
+- **Matheus Aquino:** pedi um job novo no CI para o frontend e, no job de compose, a verificação da página web e de `/api/products` passando pelo nginx, **sem remover nem enfraquecer os jobs existentes**.
+
+**Verificação e documentação (`docs/evolucao-final`)**
+
+- **Matheus Aquino:** pedi repetir as 3 execuções do k6 depois da evolução. A mediana do p95 de `POST /orders` foi de 33,24 ms (antes) para 33,71 ms (depois), dentro da variação de uma mesma série: não há regressão mensurável. Deixei registrado que **o SLO cobre só a API** e que a interface web não faz parte da medição.
+- **Matheus Aquino:** pedi que o README apresentasse a interface web numa seção identificada como **funcionalidade extra, fora do escopo do nível B**, e que o C4 de contêiner mostrasse os três contêineres e o fluxo navegador → nginx → API → PostgreSQL.
