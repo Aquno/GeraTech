@@ -44,6 +44,11 @@ services:
   k6:
     image: grafana/k6:2.3.0
     profiles: ["load"]
+    # A imagem roda como uid 12345, que não pode escrever numa pasta do host Linux.
+    # Rodamos com o uid/gid de quem é dono do repositório (1000 é o padrão do primeiro usuário no Linux).
+    # Com outro uid: K6_UID=$(id -u) K6_GID=$(id -g) docker compose --profile load run --rm k6
+    # No Docker Desktop (Windows/macOS) o compartilhamento de arquivos aceita qualquer uid.
+    user: "${K6_UID:-1000}:${K6_GID:-1000}"
     depends_on:
       api:
         condition: service_healthy

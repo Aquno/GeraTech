@@ -21,6 +21,8 @@ WORKDIR /app
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+# Contrato servido pelo Swagger UI em /docs (dist/http/api-docs.js lê ../../docs/openapi.yaml).
+COPY docs/openapi.yaml ./docs/openapi.yaml
 # Os arquivos ficam com dono root (somente leitura para a aplicação); o processo roda como "node".
 USER node
 EXPOSE 3000

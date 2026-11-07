@@ -2,4 +2,6 @@ node_modules/
 dist/
 coverage/
 .env
-tests/load/results/
+# Resultados do k6: o conteúdo é ignorado, a pasta existe (.gitkeep) para não ser criada como root.
+tests/load/results/*
+!tests/load/results/.gitkeep

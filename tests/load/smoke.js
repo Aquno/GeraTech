@@ -102,9 +102,16 @@ export function handleSummary(data) {
       Object.entries(metric.thresholds).map(([expr, result]) => `  ${result.ok ? 'OK   ' : 'FALHA'} ${name}: ${expr}`),
     );
 
+  // Um arquivo por execução (nunca sobrescreve): preserva o histórico e evita gravar por cima de um
+  // arquivo criado por outro usuário. Se a gravação falhar, o k6 só registra um erro e não muda o
+  // código de saída, então confira se o arquivo indicado abaixo existe.
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const summaryFile = `${RESULTS_DIR}/smoke-summary-${stamp}.json`;
+
   const text = [
     '',
     '=== Resumo do smoke test ===',
+    `  resumo JSON: ${summaryFile}`,
     metricLine(data, 'http_reqs', 'requisições'),
     metricLine(data, 'http_reqs{endpoint:create_order}', 'POST /orders'),
     metricLine(data, 'http_reqs{endpoint:get_order}', 'GET /orders/:id'),
@@ -119,6 +126,6 @@ export function handleSummary(data) {
 
   return {
     stdout: text,
-    [`${RESULTS_DIR}/smoke-summary.json`]: JSON.stringify(data, null, 2),
+    [summaryFile]: JSON.stringify(data, null, 2),
   };
 }
