@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+tests
+docs
+.git
+.github
+.claude
+.env
+*.md

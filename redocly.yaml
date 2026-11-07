@@ -1,0 +1,6 @@
+extends:
+  - recommended
+
+rules:
+  # API local de estudo: o único servidor é http://localhost:3000, sem ambiente publicado.
+  no-server-example.com: off

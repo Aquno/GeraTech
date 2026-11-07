@@ -1,0 +1,281 @@
+openapi: 3.1.0
+info:
+  title: Orders API
+  version: 0.2.0
+  description: |
+    API de pedidos sobre um cardápio fixo. Escopo restrito a criar, consultar, listar e cancelar pedidos.
+
+    - Todos os valores monetários são inteiros em centavos.
+    - O preço de cada item sempre vem do cardápio; o cliente informa apenas `productId` e `quantity`.
+    - O cardápio é populado por seed e não possui endpoints.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: http://localhost:3000
+    description: Desenvolvimento local
+
+# A API não possui autenticação.
+security: []
+
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Cria um pedido
+      description: |
+        O servidor busca o preço de cada produto no cardápio, calcula `subtotalCents` de cada item
+        (`quantity * unitPriceCents`) e `totalCents` do pedido. O pedido é criado com status `PENDING`.
+
+        O mesmo `productId` não pode aparecer duas vezes no pedido: a requisição é rejeitada com 400
+        e `details` aponta o item duplicado (ex.: `items[1].productId`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Pedido criado
+          headers:
+            Location:
+              description: URL do pedido criado
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnknownProduct'
+    get:
+      operationId: listOrders
+      summary: Lista pedidos
+      description: Retorna os pedidos ordenados por `createdAt` decrescente.
+      responses:
+        '200':
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /orders/{id}:
+    get:
+      operationId: getOrderById
+      summary: Busca um pedido pelo id
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Pedido encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{id}/cancel:
+    post:
+      operationId: cancelOrder
+      summary: Cancela um pedido
+      description: Muda o status de `PENDING` para `CANCELLED`.
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Pedido cancelado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/AlreadyCancelled'
+
+components:
+  parameters:
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    OrderStatus:
+      type: string
+      enum: [PENDING, CANCELLED]
+
+    ProductId:
+      type: string
+      description: Slug do produto no cardápio.
+      pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      examples: ['x-burger']
+
+    CreateOrderItem:
+      type: object
+      additionalProperties: false
+      required: [productId, quantity]
+      properties:
+        productId:
+          $ref: '#/components/schemas/ProductId'
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 20
+          examples: [2]
+
+    CreateOrderRequest:
+      type: object
+      additionalProperties: false
+      required: [customerName, items]
+      properties:
+        customerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples: ['Maria']
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateOrderItem'
+
+    OrderItem:
+      type: object
+      required: [productId, name, quantity, unitPriceCents, subtotalCents]
+      properties:
+        productId:
+          $ref: '#/components/schemas/ProductId'
+        name:
+          type: string
+          description: Nome do produto no momento da criação do pedido.
+          examples: ['X-Burger']
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 20
+          examples: [2]
+        unitPriceCents:
+          type: integer
+          minimum: 0
+          description: Preço unitário em centavos, copiado do cardápio na criação do pedido.
+          examples: [1800]
+        subtotalCents:
+          type: integer
+          minimum: 0
+          description: quantity * unitPriceCents.
+          examples: [3600]
+
+    Order:
+      type: object
+      required: [id, customerName, items, totalCents, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        customerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        totalCents:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Soma dos subtotalCents dos itens.
+          examples: [4600]
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Error:
+      type: object
+      required: [statusCode, error, message]
+      properties:
+        statusCode:
+          type: integer
+          examples: [400]
+        error:
+          type: string
+          description: Nome curto do erro HTTP.
+          examples: ['Bad Request']
+        message:
+          type: string
+          description: Descrição legível do problema.
+          examples: ['items must contain at least 1 item']
+        details:
+          type: array
+          description: Erros por campo (opcional).
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+                examples: ['items[0].quantity']
+              message:
+                type: string
+                examples: ['must be <= 20']
+
+  responses:
+    BadRequest:
+      description: Requisição com formato inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Pedido não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 404
+            error: Not Found
+            message: Order not found
+    UnknownProduct:
+      description: Um ou mais productId não existem no cardápio
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 422
+            error: Unprocessable Entity
+            message: Unknown product in menu
+            details:
+              - field: items[1].productId
+                message: 'product "x-tudo" does not exist'
+    AlreadyCancelled:
+      description: O pedido já está cancelado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 409
+            error: Conflict
+            message: Order is already cancelled

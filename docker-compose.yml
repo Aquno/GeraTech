@@ -1,0 +1,44 @@
+# Ambiente local de desenvolvimento. Os valores padrão abaixo são fictícios e permitem subir
+# tudo num clone limpo sem .env; qualquer variável pode ser sobrescrita por um .env local.
+name: orders-api
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-orders_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orders_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-orders_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-orders_user}:${POSTGRES_PASSWORD:-orders_pass}@db:5432/${POSTGRES_DB:-orders_dev}
+      PORT: ${PORT:-3000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Migrations e seed (idempotentes) rodam a cada inicialização, antes da API.
+    command: ["sh", "-c", "node dist/infra/db/migrate.js && node dist/infra/db/seed.js && exec node dist/main.js"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:$${PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  pgdata:
