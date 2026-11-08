@@ -4,6 +4,7 @@
   "private": true,
   "description": "Interface web do cardápio da Orders API (React + Vite).",
   "license": "MIT",
+  "author": "Matheus Aquino Medeiros",
   "type": "module",
   "engines": {
     "node": ">=26"
