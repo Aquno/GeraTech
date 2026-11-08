@@ -1,5 +1,7 @@
 # Registro de processo
 
+**Autor:** Matheus Aquino Medeiros
+
 Este é o meu registro de como construí este projeto, na ordem em que as coisas aconteceram.
 
 **Sobre a autoria:** o código foi gerado com assistência do **Claude Code** (Anthropic). Defini o escopo, as regras e a ordem das etapas, e decidi cada ponto listado aqui. Revisei o que foi gerado e validei os resultados rodando lint, testes, coverage, o fluxo com curl, o CI no GitHub Actions e o teste de carga. Nas linhas abaixo, "Matheus Aquino" é o que eu fiz ou decidi. "Claude Code" é o que foi gerado ou executado pela ferramenta a meu pedido.

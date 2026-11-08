@@ -4,6 +4,7 @@
   "private": true,
   "description": "API de pedidos sobre um cardápio fixo (Fastify + PostgreSQL).",
   "license": "MIT",
+  "author": "Matheus Aquino Medeiros",
   "engines": {
     "node": ">=26"
   },

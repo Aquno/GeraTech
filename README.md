@@ -229,3 +229,7 @@ Sem o secret, o build funciona normalmente em qualquer ambiente sem interceptaç
 | [docs/desempenho.md](docs/desempenho.md) | SLO, plano de p95, medições e riscos |
 | [CONTRIBUTORS.md](CONTRIBUTORS.md) | Registro do processo e das decisões |
 | [docs/evidencias/](docs/evidencias/) | Resumos JSON do k6 e capturas de tela da interface |
+
+## Autor
+
+**Matheus Aquino Medeiros**. O processo de construção e as decisões estão registrados em [CONTRIBUTORS.md](CONTRIBUTORS.md).
