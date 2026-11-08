@@ -169,7 +169,7 @@ Outras capturas, inclusive no tema escuro, estão em [`docs/evidencias/web/`](do
 
 **Acessibilidade e visual:**
 - funciona inteira pelo teclado, com foco visível;
-- campos com label e ilustrações com texto alternativo;
+- campos com label e fotos com texto alternativo;
 - contraste WCAG AA nos dois temas (claro e escuro);
 - respeita `prefers-reduced-motion`;
 - mobile primeiro;

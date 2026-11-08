@@ -59,3 +59,14 @@ Opção escolhida: **Repository Pattern**. O domínio define as interfaces `Orde
 * Ruim, porque espalha queries pelas rotas, dificultando mudanças de schema ou de driver.
 
 **Motivo do descarte:** o ganho de simplicidade inicial não compensa o acoplamento entre HTTP, domínio e SQL, que inviabiliza testes unitários do domínio e torna mais cara qualquer mudança na persistência.
+
+## Notas posteriores
+
+Esta seção registra mudanças ocorridas depois da decisão. O texto acima foi mantido como estava quando a decisão foi tomada.
+
+### 07/11/2026
+
+* **Runtime:** o projeto migrou de Node 20 para **Node 26**, a LTS com suporte ativo, porque o Node 20 chegou ao fim de suporte em 30/04/2026. A versão fica no `.nvmrc`.
+* **Endpoints:** a API passou a ter **cinco** endpoints de negócio. Aos quatro do contexto acima somou-se `GET /products` (cardápio, somente leitura), criado para a interface web, que é uma funcionalidade extra.
+* **Repositórios:** a leitura do cardápio entrou como `MenuProductRepository`, uma extensão de `ProductRepository` (segregação de interfaces): `CreateOrder` continua dependendo só de `findByIds`, e `ListProducts` usa a extensão. O `KnexProductRepository` implementa as duas.
+* **A decisão continua válida.** O domínio segue dependendo apenas de interfaces, a regra do ESLint continua impedindo o domínio de importar infraestrutura, e os novos casos de uso foram testados com repositórios em memória, como esta ADR previa.
