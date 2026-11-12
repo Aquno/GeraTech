@@ -162,7 +162,7 @@ Depois da entrega, evoluí o projeto para algo mais visual, com uma regra princi
 - **Matheus Aquino:** pedi um redesign com visão de UI/UX, mais bonito e moderno, **com fotos reais nos lanches**, sem quebrar nada do que já funcionava.
 - **Matheus Aquino:** fotos reais contrariavam a regra anterior do `CLAUDE.md` ("ilustrações são SVG próprios", "não use imagens da internet"). Decidi usar **bancos de imagens gratuitos com licença que permite uso comercial** e atualizar a regra. Ela passou a ser: só fotos CC0/domínio público com licença conferida, sem marca, logotipo nem marca d'água, e ilustração SVG como fallback para produto sem foto.
 - **Claude Code:** buscou candidatas com licença CC0/domínio público pelo [Openverse](https://openverse.org) e conferiu cada uma visualmente. Descartou fotos com marca visível (papel de restaurante, produtos de rede de fast food) e uma candidata ao X-Burger que aparecia como domínio público mas tinha a **marca d'água de direitos autorais de outra pessoa**. Recortou as escolhidas em 4:3 e otimizou em WebP (versões de 480 e 800 px, de 15 a 49 KB).
-- **Origem das fotos:** a fonte, o autor e a licença de cada uma estão em [`web/src/assets/products/CREDITS.md`](web/src/assets/products/CREDITS.md), citado também no README e no rodapé da página. As fotos ficam dentro do projeto e são servidas pelo próprio nginx, então o CSP (`img-src 'self'`) continua valendo.
+- **Origem das fotos:** a fonte, o autor e a licença de cada uma estão em [`web/src/assets/products/CREDITS.md`](web/src/assets/products/CREDITS.md), citado também no README. A página não mostra créditos: a licença CC0 não exige atribuição na tela, e a linha de créditos que existia no rodapé foi retirada a meu pedido na troca de marca (PR #9). As fotos ficam dentro do projeto e são servidas pelo próprio nginx, então o CSP (`img-src 'self'`) continua valendo.
 - **Claude Code:** redesenhou a interface:
   - cabeçalho fixo;
   - destaque com composição de fotos no desktop e versão compacta no celular, para o primeiro produto já aparecer na primeira tela;
@@ -196,3 +196,16 @@ Depois da entrega, evoluí o projeto para algo mais visual, com uma regra princi
   - este registro;
   - uma seção datada de "Notas posteriores" na ADR 0001 (Node 26, cinco endpoints, decisão mantida), **sem alterar o texto original**;
   - "ilustrações" por "fotos" no README.
+
+**Troca de marca para Chodó Burger (PR #9)**
+
+- **Matheus Aquino:** forneci a logo da **Chodó Burger** em três versões (logo com nome, logo com nome sem fundo e só o desenho sem fundo) e pedi para substituir o nome "Mostarda Lanches" em todo o projeto.
+- **Claude Code:** usou cada versão onde funciona melhor nos dois temas:
+  - **só o desenho** no cabeçalho, ao lado do nome em texto, com um selo creme no tema escuro para o contorno marrom não sumir;
+  - **logo com nome** no rodapé: a transparente no tema claro e a com fundo creme no escuro, onde o nome marrom-escuro ficaria ilegível;
+  - favicon e ícone para iPhone gerados a partir da logo.
+
+  As logos são decorativas para leitores de tela, porque o nome já está em texto no cabeçalho. O nome da marca fica numa constante única, com a grafia da logo ("Chodó Burger"). As versões usadas na página são WebP otimizadas; os originais ficam em `web/src/assets/imagens/`.
+- **Matheus Aquino:** decidi **manter a chave interna `mostarda-theme`**, onde o navegador guarda o tema escolhido. Renomeá-la apagaria o tema salvo de quem já usou a interface, e ela não aparece na tela.
+- **Matheus Aquino:** pedi para retirar do rodapé a linha de créditos das fotos. Eles continuam no `CREDITS.md` e no README. O teste que exigia a frase na tela passou a exigir que ela não apareça: o requisito mudou, e a asserção foi invertida, não removida.
+- **Matheus Aquino:** pedi uma nova **auditoria somente leitura** depois da troca. Ela confirmou que a mudança ficou contida em `web/`, no README (uma linha) e nas capturas, sem requisição externa nem violação de CSP, e com o CI verde. Dos pontos levantados, corrigi este registro e renomeei `logo com nome.png` para `logo_com_nome.png` (sem espaços), na branch `docs/ajustes-marca`.
