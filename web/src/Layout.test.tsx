@@ -52,10 +52,11 @@ describe('Layout redesenhado', () => {
     expect(line).toHaveTextContent('Suco');
   });
 
-  it('o rodapé informa a origem das fotos', async () => {
+  it('o rodapé não mostra os créditos das fotos (eles ficam em src/assets/products/CREDITS.md)', async () => {
     mockApi({});
     await renderApp();
 
-    expect(screen.getByText(/Fotos de bancos de imagens com licença CC0/)).toBeInTheDocument();
+    expect(screen.queryByText(/Fotos de bancos de imagens/)).not.toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).not.toHaveTextContent(/CREDITS\.md|licença CC0/);
   });
 });
