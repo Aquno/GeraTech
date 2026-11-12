@@ -1,4 +1,4 @@
-/* Mostarda Lanches: mobile primeiro. Paleta quente (creme, café, ketchup, mostarda) com tokens por tema. */
+/* Chodó Burger: mobile primeiro. Paleta quente (creme, café, ketchup, mostarda) com tokens por tema. */
 
 :root {
   --font-display: 'Bricolage Grotesque Variable', 'Trebuchet MS', system-ui, sans-serif;
@@ -36,6 +36,7 @@
   --radius: 22px;
   --radius-sm: 14px;
   --header-h: 68px;
+  --logo-chip: transparent;
 
   color-scheme: light;
 }
@@ -66,6 +67,7 @@
   --ok-text: #b8e49a;
   --hero-from: #3a2612;
   --hero-to: #1f1710;
+  --logo-chip: #f6e7c8;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -10px rgb(0 0 0 / 0.6);
   --shadow-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 22px 40px -14px rgb(0 0 0 / 0.7);
@@ -180,9 +182,13 @@ input {
 }
 
 .logo-mark {
-  width: 40px;
-  height: 40px;
+  width: auto;
+  height: 46px;
   flex: none;
+  /* No escuro, o contorno marrom da logo some no fundo: um "selo" creme mantém o desenho legível. */
+  padding: 2px;
+  border-radius: 14px;
+  background: var(--logo-chip);
 }
 
 .brand-name {
@@ -984,6 +990,30 @@ input {
 
 .site-footer p {
   margin: 4px 0;
+}
+
+/* Logo com nome no rodapé: versão transparente no tema claro, com fundo creme no escuro. */
+.logo-full {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.logo-full img {
+  width: 132px;
+  height: auto;
+}
+
+.logo-full-dark {
+  display: none;
+  border-radius: 18px;
+}
+
+:root[data-theme='dark'] .logo-full-light {
+  display: none;
+}
+
+:root[data-theme='dark'] .logo-full-dark {
+  display: block;
 }
 
 /* ---------- Telas maiores ---------- */

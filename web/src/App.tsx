@@ -4,10 +4,11 @@ import type { Order, Product } from './api/types';
 import { cartReducer, quantityOf } from './cart/cart';
 import { CartPanel } from './components/CartPanel';
 import { ErrorAlert } from './components/ErrorAlert';
-import { Logo } from './components/Logo';
+import { Logo, LogoWithName } from './components/Logo';
 import { Menu } from './components/Menu';
 import { OrderConfirmation } from './components/OrderConfirmation';
 import { ProductPhoto } from './components/ProductPhoto';
+import { BRAND_NAME } from './lib/brand';
 import { describeError, type UserMessage } from './lib/errors';
 import { applyTheme, initialTheme, saveTheme, type Theme } from './lib/theme';
 
@@ -105,7 +106,7 @@ export function App() {
         <div className="site-header-inner">
           <div className="brand">
             <Logo />
-            <h1 className="brand-name">Mostarda Lanches</h1>
+            <h1 className="brand-name">{BRAND_NAME}</h1>
           </div>
           <button
             type="button"
@@ -203,8 +204,8 @@ export function App() {
         )}
       </main>
       <footer className="site-footer">
-        <p>Mostarda Lanches é uma lanchonete fictícia de demonstração.</p>
-        <p>Fotos de bancos de imagens com licença CC0 (créditos em web/src/assets/products/CREDITS.md).</p>
+        <LogoWithName />
+        <p>{BRAND_NAME} · projeto de demonstração.</p>
       </footer>
     </>
   );

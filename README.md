@@ -174,7 +174,7 @@ Outras capturas, inclusive no tema escuro, estão em [`docs/evidencias/web/`](do
 - respeita `prefers-reduced-motion`;
 - mobile primeiro;
 - fotos reais dos produtos, de bancos de imagens com licença CC0 (origem e licença de cada uma em [`web/src/assets/products/CREDITS.md`](web/src/assets/products/CREDITS.md)), otimizadas em WebP com versões de 480 e 800 px; produto sem foto cai numa ilustração SVG própria;
-- "Mostarda Lanches" é uma marca fictícia.
+- a marca é **Chodó Burger**: a logo foi fornecida pelo autor (originais em [`web/src/assets/imagens/`](web/src/assets/imagens/)), com versões otimizadas em WebP e favicon gerados a partir dela.
 
 **Stack:** React 19 · Vite · TypeScript (strict) · Vitest + Testing Library · nginx.
 

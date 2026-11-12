@@ -1,11 +1,23 @@
-/** Marca fictícia da lanchonete: um pote de mostarda estilizado. */
+import icon from '../assets/imagens/chodo-icone-96.webp';
+import logoComNomeFundo from '../assets/imagens/chodo-logo-nome-fundo.webp';
+import logoComNome from '../assets/imagens/chodo-logo-nome.webp';
+
+// Logo da Chodó Burger, fornecida pelo autor (originais em src/assets/imagens/).
+
+/** Só o desenho, para o cabeçalho. Decorativo: o nome da marca vem em texto logo ao lado. */
 export function Logo() {
+  return <img src={icon} alt="" className="logo-mark" width={52} height={48} decoding="async" />;
+}
+
+/**
+ * Logo com o nome, para o rodapé. Duas versões, alternadas pelo tema no CSS: a transparente no tema claro
+ * e a com fundo creme no escuro, onde o nome marrom-escuro sumiria. Decorativa: o nome já está no cabeçalho.
+ */
+export function LogoWithName() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" className="logo-mark">
-      <rect x="4" y="4" width="40" height="40" rx="12" fill="#E3A21A" />
-      <path d="M17 18h14l2 20a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4z" fill="#FFF4DC" stroke="#3B2314" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M20 18l2-8h4l2 8" fill="#D9472B" stroke="#3B2314" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M19 28q5 4 10 0" fill="none" stroke="#E3A21A" strokeWidth="3" strokeLinecap="round" />
-    </svg>
+    <span className="logo-full">
+      <img src={logoComNome} alt="" className="logo-full-light" width={240} height={246} loading="lazy" decoding="async" />
+      <img src={logoComNomeFundo} alt="" className="logo-full-dark" width={300} height={311} loading="lazy" decoding="async" />
+    </span>
   );
 }
